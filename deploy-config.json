@@ -1,0 +1,40 @@
+{
+  "platforms": {
+    "itch": {
+      "buildCommand": "npm run build",
+      "outputDir": "build",
+      "mainFile": "index.html",
+      "notes": "Upload the entire build folder as a zip file to Itch.io"
+    },
+    "newgrounds": {
+      "buildCommand": "npm run build",
+      "outputDir": "build",
+      "mainFile": "index.html",
+      "notes": "Follow Newgrounds HTML5 submission guidelines"
+    },
+    "gamejolt": {
+      "buildCommand": "npm run build",
+      "outputDir": "build",
+      "mainFile": "index.html",
+      "notes": "Upload build folder contents to GameJolt"
+    },
+    "github-pages": {
+      "buildCommand": "npm run build",
+      "outputDir": "build",
+      "mainFile": "index.html",
+      "notes": "Deploy using gh-pages or GitHub Actions"
+    },
+    "netlify": {
+      "buildCommand": "npm run build",
+      "outputDir": "build",
+      "publish": "build",
+      "notes": "Connect repository to Netlify for automatic deployments"
+    },
+    "vercel": {
+      "buildCommand": "npm run build",
+      "outputDir": "build",
+      "notes": "Deploy using Vercel CLI or connect GitHub repository"
+    }
+  }
+}
+
