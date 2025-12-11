@@ -54,11 +54,15 @@ export class GameEngine {
     this.hitCount = 0;
     this.gameState = 'ready'; // 'ready', 'playing', 'paused', 'gameOver'
     this.winner = null;
+    this.gameStartTime = null; // Track when game started for time-based speed increase
+    this.lastTimeSpeedIncrease = null; // Track last time-based speed increase
   }
   
   start() {
     if (this.gameState === 'ready') {
       this.gameState = 'playing';
+      this.gameStartTime = Date.now();
+      this.lastTimeSpeedIncrease = Date.now();
     }
   }
 
@@ -84,6 +88,29 @@ export class GameEngine {
     // Ensure ball has valid velocity (check for NaN or 0)
     if (isNaN(this.ball.vx) || isNaN(this.ball.vy) || (this.ball.vx === 0 && this.ball.vy === 0)) {
       this.resetBall();
+    }
+
+    // Time-based gradual speed increase (very subtle)
+    if (this.lastTimeSpeedIncrease && GAME_CONFIG.BALL_TIME_SPEED_INCREMENT > 0) {
+      const now = Date.now();
+      const timeSinceLastIncrease = now - this.lastTimeSpeedIncrease;
+      if (timeSinceLastIncrease >= GAME_CONFIG.BALL_TIME_INTERVAL) {
+        if (this.ball.speed < GAME_CONFIG.BALL_MAX_SPEED) {
+          this.ball.speed = Math.min(
+            this.ball.speed + GAME_CONFIG.BALL_TIME_SPEED_INCREMENT,
+            GAME_CONFIG.BALL_MAX_SPEED
+          );
+          
+          // Normalize and scale velocity
+          const currentSpeed = Math.sqrt(this.ball.vx ** 2 + this.ball.vy ** 2);
+          if (currentSpeed > 0) {
+            const ratio = this.ball.speed / currentSpeed;
+            this.ball.vx *= ratio;
+            this.ball.vy *= ratio;
+          }
+        }
+        this.lastTimeSpeedIncrease = now;
+      }
     }
 
     // Update ball position
@@ -300,16 +327,19 @@ export class GameEngine {
     this.ball.y = this.canvasHeight / 2;
     const randomVx = Math.random() > 0.5 ? 1 : -1;
     const randomVy = Math.random() > 0.5 ? 1 : -1;
-    this.ball.vx = GAME_CONFIG.BALL_INITIAL_SPEED * randomVx;
-    this.ball.vy = GAME_CONFIG.BALL_INITIAL_SPEED * randomVy;
-    this.ball.speed = GAME_CONFIG.BALL_INITIAL_SPEED;
+    
+    // Use current speed (not initial) to maintain speed progression
+    const currentSpeed = this.ball.speed || GAME_CONFIG.BALL_INITIAL_SPEED;
+    this.ball.vx = currentSpeed * randomVx;
+    this.ball.vy = currentSpeed * randomVy;
+    this.ball.speed = currentSpeed;
     
     // Ensure ball has non-zero velocity
     if (this.ball.vx === 0) {
-      this.ball.vx = GAME_CONFIG.BALL_INITIAL_SPEED;
+      this.ball.vx = currentSpeed;
     }
     if (this.ball.vy === 0) {
-      this.ball.vy = GAME_CONFIG.BALL_INITIAL_SPEED;
+      this.ball.vy = currentSpeed;
     }
   }
 
@@ -331,15 +361,11 @@ export class GameEngine {
     }
     // Don't allow pausing when in 'ready' state
   }
-  
-  start() {
-    if (this.gameState === 'ready') {
-      this.gameState = 'playing';
-    }
-  }
 
   restart() {
     this.reset();
+    this.gameStartTime = null;
+    this.lastTimeSpeedIncrease = null;
   }
 
   getState() {
