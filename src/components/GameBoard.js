@@ -175,31 +175,6 @@ const GameBoard = ({ onScoreUpdate, onGameOver, gameMode = '2player', aiDifficul
     };
   }, [canvasSize, generateRandomObstacles, startDynamicObstacleSystem]); // Regenerate on game restart
 
-  // Dynamic obstacle spawning system
-  const startDynamicObstacleSystem = useCallback(() => {
-    if (!GAME_CONFIG.DYNAMIC_OBSTACLES || !GAME_CONFIG.TEMPORARY_OBSTACLES) return;
-    
-    // Spawn new temporary obstacles periodically
-    obstacleSpawnTimerRef.current = setInterval(() => {
-      if (!gameEngineRef.current) return;
-      const state = gameEngineRef.current.getState();
-      
-      // Only spawn during gameplay
-      if (state.gameState !== 'playing') return;
-      
-      // Count only temporary obstacles (not permanent ones)
-      const tempObstacleCount = obstaclesRef.current.filter(obs => !obs.permanent).length;
-      
-      // Don't spawn if we have too many temporary obstacles
-      if (tempObstacleCount >= GAME_CONFIG.MAX_TEMPORARY_OBSTACLES) return;
-      
-      // Random chance to spawn (60% chance)
-      if (Math.random() > 0.4) {
-        spawnRandomObstacle();
-      }
-    }, GAME_CONFIG.OBSTACLE_SPAWN_INTERVAL);
-  }, []);
-
   // Spawn a single random obstacle
   const spawnRandomObstacle = useCallback(() => {
     if (!canvasSize.width || !canvasSize.height) return;
@@ -233,6 +208,7 @@ const GameBoard = ({ onScoreUpdate, onGameOver, gameMode = '2player', aiDifficul
       x,
       y,
       radius: GAME_CONFIG.HOLE_RADIUS * Math.min(scaleX, scaleY),
+      permanent: false,
       id: Date.now() + Math.random() // Unique ID for tracking
     } : {
       type: 'pole',
@@ -240,6 +216,7 @@ const GameBoard = ({ onScoreUpdate, onGameOver, gameMode = '2player', aiDifficul
       y,
       width: GAME_CONFIG.POLE_WIDTH * scaleX,
       height: GAME_CONFIG.POLE_HEIGHT * scaleY,
+      permanent: false,
       id: Date.now() + Math.random()
     };
     
@@ -255,6 +232,31 @@ const GameBoard = ({ onScoreUpdate, onGameOver, gameMode = '2player', aiDifficul
     obstacleDespawnTimersRef.current.push(despawnTimer);
   }, [canvasSize]);
 
+  // Dynamic obstacle spawning system
+  const startDynamicObstacleSystem = useCallback(() => {
+    if (!GAME_CONFIG.DYNAMIC_OBSTACLES || !GAME_CONFIG.TEMPORARY_OBSTACLES) return;
+    
+    // Spawn new temporary obstacles periodically
+    obstacleSpawnTimerRef.current = setInterval(() => {
+      if (!gameEngineRef.current) return;
+      const state = gameEngineRef.current.getState();
+      
+      // Only spawn during gameplay
+      if (state.gameState !== 'playing') return;
+      
+      // Count only temporary obstacles (not permanent ones)
+      const tempObstacleCount = obstaclesRef.current.filter(obs => !obs.permanent).length;
+      
+      // Don't spawn if we have too many temporary obstacles
+      if (tempObstacleCount >= GAME_CONFIG.MAX_TEMPORARY_OBSTACLES) return;
+      
+      // Random chance to spawn (60% chance)
+      if (Math.random() > 0.4) {
+        spawnRandomObstacle();
+      }
+    }, GAME_CONFIG.OBSTACLE_SPAWN_INTERVAL);
+  }, [spawnRandomObstacle]);
+
   // Spawn obstacle on score change (with delay for suspense)
   useEffect(() => {
     if (!gameEngineRef.current || !GAME_CONFIG.OBSTACLE_SPAWN_ON_SCORE) return;
@@ -269,24 +271,6 @@ const GameBoard = ({ onScoreUpdate, onGameOver, gameMode = '2player', aiDifficul
       const tempObstacleCount = obstaclesRef.current.filter(obs => !obs.permanent).length;
       if (Math.random() < 0.5 && tempObstacleCount < GAME_CONFIG.MAX_TEMPORARY_OBSTACLES) {
         setTimeout(() => spawnRandomObstacle(), 1000); // 1 second delay for suspense
-      }
-      lastScoreRef.current = currentScore;
-    }
-  }, [forceUpdate, spawnRandomObstacle]);
-
-  // Spawn obstacle on score change
-  useEffect(() => {
-    if (!gameEngineRef.current || !GAME_CONFIG.OBSTACLE_SPAWN_ON_SCORE) return;
-    
-    const state = gameEngineRef.current.getState();
-    const currentScore = { score1: state.score1, score2: state.score2 };
-    
-    // Check if score changed
-    if (currentScore.score1 !== lastScoreRef.current.score1 || 
-        currentScore.score2 !== lastScoreRef.current.score2) {
-      // Spawn obstacle after score (50% chance)
-      if (Math.random() < 0.5 && obstaclesRef.current.length < GAME_CONFIG.MAX_ACTIVE_OBSTACLES) {
-        setTimeout(() => spawnRandomObstacle(), 500); // Small delay for visual effect
       }
       lastScoreRef.current = currentScore;
     }
