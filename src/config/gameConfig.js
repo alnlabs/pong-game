@@ -13,14 +13,14 @@ export const GAME_CONFIG = {
   // Ball settings
   BALL_SIZE: 12,
   BALL_INITIAL_SPEED: 3, // Slower start speed
-  BALL_SPEED_INCREMENT: 0.1, // Smaller speed increase per interval
+  BALL_SPEED_INCREMENT: 0.08, // Very small speed increase per interval
   BALL_MAX_SPEED: 15,
-  BALL_TIME_SPEED_INCREMENT: 0.05, // Very gradual time-based speed increase
-  BALL_TIME_INTERVAL: 5000, // Increase speed every 5 seconds (time-based)
+  BALL_TIME_SPEED_INCREMENT: 0.03, // Very gradual time-based speed increase
+  BALL_TIME_INTERVAL: 15000, // Increase speed every 15 seconds (much slower)
   
   // Game settings
   WIN_SCORE: 5,
-  SPEED_INCREASE_INTERVAL: 15, // Increase speed every 15 hits (less frequent)
+  SPEED_INCREASE_INTERVAL: 20, // Increase speed every 20 hits (less frequent)
   
   // Obstacle settings
   OBSTACLES_ENABLED: true,
