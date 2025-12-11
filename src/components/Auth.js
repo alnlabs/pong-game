@@ -76,29 +76,16 @@ const Auth = ({ onAuthSuccess }) => {
   return (
     <div
       style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.9)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 2000
+        width: '100%',
+        maxWidth: GAME_CONFIG.CANVAS_WIDTH,
+        margin: '20px auto',
+        backgroundColor: GAME_CONFIG.COLORS.BACKGROUND,
+        padding: '30px',
+        borderRadius: '20px',
+        border: `3px solid ${GAME_CONFIG.COLORS.BALL}`,
+        boxShadow: `0 0 30px ${GAME_CONFIG.COLORS.BALL}`
       }}
     >
-      <div
-        style={{
-          backgroundColor: GAME_CONFIG.COLORS.BACKGROUND,
-          padding: '40px',
-          borderRadius: '20px',
-          border: `3px solid ${GAME_CONFIG.COLORS.BALL}`,
-          boxShadow: `0 0 30px ${GAME_CONFIG.COLORS.BALL}`,
-          minWidth: '400px',
-          maxWidth: '500px'
-        }}
-      >
         <h2
           style={{
             color: GAME_CONFIG.COLORS.TEXT,
@@ -277,7 +264,6 @@ const Auth = ({ onAuthSuccess }) => {
             Continue as Guest
           </button>
         </div>
-      </div>
     </div>
   );
 };

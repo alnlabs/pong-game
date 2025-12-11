@@ -141,9 +141,9 @@ function App() {
 
   return (
     <div className="App">
-      {showAuth && <Auth onAuthSuccess={handleAuthSuccess} />}
       <div className="game-container">
         <h1 className="game-title">PONG GAME</h1>
+        {showAuth && <Auth onAuthSuccess={handleAuthSuccess} />}
         {user && gameMode === 'online' && (
           <div
             style={{
@@ -182,36 +182,40 @@ function App() {
             </button>
           </div>
         )}
-        <ModeSelector
-          gameMode={gameMode}
-          onModeChange={handleModeChange}
-          aiDifficulty={aiDifficulty}
-          onDifficultyChange={handleDifficultyChange}
-        />
-        <ScoreBoard 
-          score1={score1} 
-          score2={score2}
-          player1Name={playerNames.player1}
-          player2Name={playerNames.player2}
-        />
-        {showOnlineLobby && user && (
-          <OnlineLobby
-            onGameStart={handleOnlineGameStart}
-            onCancel={handleOnlineCancel}
-          />
-        )}
-        {!showOnlineLobby && (
+        {!showAuth && (
           <>
-            <GameBoard
-              key={gameKey}
+            <ModeSelector
               gameMode={gameMode}
+              onModeChange={handleModeChange}
               aiDifficulty={aiDifficulty}
-              onlineConfig={onlineConfig}
-              onScoreUpdate={handleScoreUpdate}
-              onGameOver={handleGameOver}
+              onDifficultyChange={handleDifficultyChange}
             />
-            <Instructions gameMode={gameMode} />
-            {gameOver && <GameOver winner={winner} onRestart={handleRestart} gameMode={gameMode} />}
+            <ScoreBoard 
+              score1={score1} 
+              score2={score2}
+              player1Name={playerNames.player1}
+              player2Name={playerNames.player2}
+            />
+            {showOnlineLobby && user && (
+              <OnlineLobby
+                onGameStart={handleOnlineGameStart}
+                onCancel={handleOnlineCancel}
+              />
+            )}
+            {!showOnlineLobby && (
+              <>
+                <GameBoard
+                  key={gameKey}
+                  gameMode={gameMode}
+                  aiDifficulty={aiDifficulty}
+                  onlineConfig={onlineConfig}
+                  onScoreUpdate={handleScoreUpdate}
+                  onGameOver={handleGameOver}
+                />
+                <Instructions gameMode={gameMode} />
+                {gameOver && <GameOver winner={winner} onRestart={handleRestart} gameMode={gameMode} />}
+              </>
+            )}
           </>
         )}
       </div>
