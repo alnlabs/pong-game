@@ -12,7 +12,7 @@ export const GAME_CONFIG = {
   
   // Ball settings
   BALL_SIZE: 12,
-  BALL_INITIAL_SPEED: 3, // Slower start speed
+  BALL_INITIAL_SPEED: 1, // Very slow start speed to prevent immediate scoring
   BALL_SPEED_INCREMENT: 0.08, // Very small speed increase per interval
   BALL_MAX_SPEED: 15,
   BALL_TIME_SPEED_INCREMENT: 0.03, // Very gradual time-based speed increase

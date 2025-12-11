@@ -411,29 +411,41 @@ const GameBoard = ({ onScoreUpdate, onGameOver, gameMode = '2player', aiDifficul
     ctx.globalAlpha = 1;
     
     // Draw obstacles
+    // Only show holes after first paddle hit (hitCount > 0)
     if (GAME_CONFIG.OBSTACLES_ENABLED && obstaclesRef.current) {
       obstaclesRef.current.forEach(obstacle => {
         if (obstacle.type === 'hole') {
-          // Draw hole with darker center and dashed border
-          ctx.fillStyle = 'rgba(0, 0, 0, 0.6)'; // Dark center
+          // Only render holes if ball has been hit at least once
+          if (state.hitCount === 0) {
+            return; // Don't render holes until first hit
+          }
+          // Draw hole with bright, visible border
+          // Outer glow ring
+          ctx.shadowBlur = 15;
+          ctx.shadowColor = '#ff4444';
+          ctx.strokeStyle = '#ff6666';
+          ctx.lineWidth = 4;
+          ctx.setLineDash([10, 5]);
           ctx.beginPath();
           ctx.arc(obstacle.x, obstacle.y, obstacle.radius, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.setLineDash([]);
+          ctx.shadowBlur = 0;
+          
+          // Inner dark center to show depth
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+          ctx.beginPath();
+          ctx.arc(obstacle.x, obstacle.y, obstacle.radius * 0.9, 0, Math.PI * 2);
           ctx.fill();
           
-          // Draw dashed border
-          ctx.strokeStyle = GAME_CONFIG.COLORS.OBSTACLE;
+          // Bright warning border
+          ctx.strokeStyle = '#ff4444';
           ctx.lineWidth = 3;
           ctx.setLineDash([8, 4]);
           ctx.beginPath();
           ctx.arc(obstacle.x, obstacle.y, obstacle.radius, 0, Math.PI * 2);
           ctx.stroke();
           ctx.setLineDash([]);
-          
-          // Add inner shadow effect
-          ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
-          ctx.beginPath();
-          ctx.arc(obstacle.x, obstacle.y, obstacle.radius * 0.7, 0, Math.PI * 2);
-          ctx.fill();
         } else if (obstacle.type === 'pole') {
           ctx.fillStyle = GAME_CONFIG.COLORS.OBSTACLE;
           ctx.strokeStyle = GAME_CONFIG.COLORS.BALL;
