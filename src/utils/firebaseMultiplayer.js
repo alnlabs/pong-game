@@ -10,6 +10,7 @@ class FirebaseMultiplayer {
     this.playerNumber = null;
     this.playerId = null;
     this.roomRef = null;
+    this.gameReadyTriggered = false; // Prevent duplicate GameReady calls
     this.callbacks = {
       onConnect: null,
       onDisconnect: null,
@@ -73,6 +74,7 @@ class FirebaseMultiplayer {
     this.playerNumber = null;
     this.playerId = null;
     this.roomRef = null;
+    this.gameReadyTriggered = false; // Reset flag on disconnect
 
     if (this.callbacks.onDisconnect) {
       this.callbacks.onDisconnect();
@@ -162,52 +164,56 @@ class FirebaseMultiplayer {
       joinedAt: Date.now()
     });
 
-    // Update room status
-    await update(ref(database, `rooms/${roomId}`), {
-      status: 'ready'
-    });
-
     this.roomId = roomId;
     this.playerNumber = 2;
     this.roomRef = roomRef;
 
-    // Set up room listeners
+    // Set up room listeners BEFORE updating status
     this.setupRoomListeners();
 
     if (this.callbacks.onRoomJoined) {
       this.callbacks.onRoomJoined({ roomId, playerNumber: 2 });
     }
 
-    // Notify that game is ready
-    const players = playersSnapshot.val() || {};
-    const player1Id = Object.keys(players).find(key => players[key].playerNumber === 1);
+    // Wait a moment to ensure listeners are set up, then update status
+    // The status change will trigger GameReady in setupRoomListeners
+    await new Promise(resolve => setTimeout(resolve, 100));
     
-    if (this.callbacks.onGameReady) {
-      this.callbacks.onGameReady({
-        player1: player1Id,
-        player2: this.playerId
-      });
-    }
+    // Update room status to ready - this will trigger the listener in setupRoomListeners
+    await update(ref(database, `rooms/${roomId}`), {
+      status: 'ready'
+    });
   }
 
   setupRoomListeners() {
     if (!this.roomRef) return;
 
-    // Listen for room status changes
+    // Listen for room status changes and player connections
     onValue(ref(database, `rooms/${this.roomId}/status`), (snapshot) => {
       const status = snapshot.val();
-      if (status === 'ready' && this.playerNumber === 1) {
-        // Check if both players are connected
+      if (status === 'ready') {
+        // Always check if both players are connected before starting game
         get(ref(database, `rooms/${this.roomId}/players`)).then((playersSnapshot) => {
           if (playersSnapshot.exists()) {
             const players = playersSnapshot.val();
             const playerCount = Object.keys(players).length;
-            if (playerCount === 2 && this.callbacks.onGameReady) {
-              const playerIds = Object.keys(players);
-              this.callbacks.onGameReady({
-                player1: playerIds.find(id => players[id].playerNumber === 1),
-                player2: playerIds.find(id => players[id].playerNumber === 2)
-              });
+            
+            // Verify we have exactly 2 players and both are connected
+            if (playerCount === 2 && !this.gameReadyTriggered) {
+              const player1 = Object.values(players).find(p => p.playerNumber === 1);
+              const player2 = Object.values(players).find(p => p.playerNumber === 2);
+              
+              if (player1 && player1.connected && player2 && player2.connected) {
+                // Both players confirmed connected - trigger game ready (only once)
+                this.gameReadyTriggered = true;
+                if (this.callbacks.onGameReady) {
+                  const playerIds = Object.keys(players);
+                  this.callbacks.onGameReady({
+                    player1: playerIds.find(id => players[id].playerNumber === 1),
+                    player2: playerIds.find(id => players[id].playerNumber === 2)
+                  });
+                }
+              }
             }
           }
         });
@@ -258,16 +264,42 @@ class FirebaseMultiplayer {
       }
     });
 
-    // Listen for opponent disconnection
+    // Listen for player connections/disconnections
     onValue(ref(database, `rooms/${this.roomId}/players`), (snapshot) => {
       if (snapshot.exists()) {
         const players = snapshot.val();
         const opponentNumber = this.playerNumber === 1 ? 2 : 1;
         const opponent = Object.values(players).find(p => p.playerNumber === opponentNumber);
         
+        // Check if opponent disconnected
         if (!opponent || !opponent.connected) {
           if (this.callbacks.onOpponentDisconnected) {
             this.callbacks.onOpponentDisconnected();
+          }
+        }
+        
+        // Also check if both players are now connected and room is ready
+        // This handles the case where status changes before player data is fully synced
+        const playerCount = Object.keys(players).length;
+        if (playerCount === 2) {
+          const player1 = Object.values(players).find(p => p.playerNumber === 1);
+          const player2 = Object.values(players).find(p => p.playerNumber === 2);
+          
+          if (player1 && player1.connected && player2 && player2.connected && !this.gameReadyTriggered) {
+            // Check room status
+            get(ref(database, `rooms/${this.roomId}/status`)).then((statusSnapshot) => {
+              if (statusSnapshot.val() === 'ready' && !this.gameReadyTriggered) {
+                // Both players confirmed connected and room is ready - trigger game ready (only once)
+                this.gameReadyTriggered = true;
+                if (this.callbacks.onGameReady) {
+                  const playerIds = Object.keys(players);
+                  this.callbacks.onGameReady({
+                    player1: playerIds.find(id => players[id].playerNumber === 1),
+                    player2: playerIds.find(id => players[id].playerNumber === 2)
+                  });
+                }
+              }
+            });
           }
         }
       }

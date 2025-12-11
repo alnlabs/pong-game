@@ -17,6 +17,27 @@ This project uses Firebase Authentication and Realtime Database (not Hosting).
 4. Enable the following sign-in methods:
    - **Anonymous** (for guest users)
    - **Google** (for Google OAuth sign-in)
+     - Click on **Google** provider
+     - Enable it and save
+     - Configure OAuth consent screen if prompted
+
+### 1.1. Configure Authorized Domains (IMPORTANT for Google Sign-In)
+
+To fix "unauthorized domain" errors, you must add your domains to the authorized list:
+
+1. In Firebase Console, go to **Authentication** > **Settings**
+2. Scroll down to **Authorized domains**
+3. Add the following domains:
+   - `localhost` (for local development - usually already added)
+   - Your production domain (e.g., `yourdomain.com`, `yourdomain.netlify.app`, etc.)
+   - Any other domains where you'll host the app
+
+**Note**: Firebase automatically includes:
+- `localhost` (for development)
+- `*.firebaseapp.com` (for Firebase Hosting)
+- `*.web.app` (for Firebase Hosting)
+
+If you're deploying to Netlify, Vercel, or another service, make sure to add that domain!
 
 ### 2. Enable Realtime Database
 
