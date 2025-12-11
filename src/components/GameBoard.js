@@ -35,13 +35,18 @@ const GameBoard = ({ onScoreUpdate, onGameOver, gameMode = '2player', aiDifficul
         GAME_CONFIG.CANVAS_WIDTH,
         GAME_CONFIG.CANVAS_HEIGHT
       );
-      
-      // Initialize AI controller if in AI mode
-      if (gameMode === 'ai') {
+    }
+    
+    // Initialize or update AI controller when mode or difficulty changes
+    if (gameMode === 'ai') {
+      if (!aiControllerRef.current || aiControllerRef.current.difficulty !== aiDifficulty) {
         aiControllerRef.current = new AIController(aiDifficulty);
       }
+    } else {
+      // Clear AI controller when not in AI mode
+      aiControllerRef.current = null;
     }
-  }, []); // Run only once on mount
+  }, [gameMode, aiDifficulty]); // Re-run when mode or difficulty changes
 
   // Calculate responsive canvas size
   useEffect(() => {
@@ -556,11 +561,15 @@ const GameBoard = ({ onScoreUpdate, onGameOver, gameMode = '2player', aiDifficul
 
       // AI controls top paddle (Player 1)
       if (aiControllerRef.current && currentState.gameState === 'playing') {
+        // Ensure AI controller is initialized
+        if (!aiControllerRef.current) {
+          aiControllerRef.current = new AIController(aiDifficulty);
+        }
         const aiDirection = aiControllerRef.current.getMovement(
           currentState.ball,
           currentState.paddle1,
-          GAME_CONFIG.CANVAS_WIDTH,
-          GAME_CONFIG.CANVAS_HEIGHT,
+          canvasSize.width || GAME_CONFIG.CANVAS_WIDTH,
+          canvasSize.height || GAME_CONFIG.CANVAS_HEIGHT,
           true // isTopPaddle
         );
         if (aiDirection !== 0) {
