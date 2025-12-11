@@ -25,6 +25,20 @@ export const GAME_CONFIG = {
   HOLE_RADIUS: 30,
   POLE_WIDTH: 10,
   POLE_HEIGHT: 60,
+  RANDOM_OBSTACLES: true, // Random obstacle placement each game
+  MIN_HOLES: 1,
+  MAX_HOLES: 3,
+  MIN_POLES: 2,
+  MAX_POLES: 5,
+  // Dynamic obstacle system
+  DYNAMIC_OBSTACLES: true, // Obstacles appear/disappear during gameplay
+  PERMANENT_OBSTACLES: 2, // Number of permanent obstacles (always visible)
+  TEMPORARY_OBSTACLES: true, // Enable temporary obstacles
+  OBSTACLE_SPAWN_INTERVAL: 8000, // Spawn new temporary obstacle every 8 seconds
+  OBSTACLE_DESPAWN_INTERVAL: 12000, // Temporary obstacle disappears after 12 seconds
+  MAX_TEMPORARY_OBSTACLES: 3, // Maximum temporary obstacles on screen at once
+  INITIAL_DELAY: 5000, // Wait 5 seconds before first temporary obstacle appears
+  OBSTACLE_SPAWN_ON_SCORE: true, // Spawn obstacle when score changes (50% chance)
   
   // Colors
   COLORS: {

@@ -4,9 +4,6 @@ import { AIController } from '../engine/AIController';
 import socketManager from '../utils/socketManager';
 import firebaseMultiplayer from '../utils/firebaseMultiplayer';
 import { GAME_CONFIG } from '../config/gameConfig';
-import Ball from './Ball';
-import Paddle from './Paddle';
-import Obstacles from './Obstacles';
 import TouchControls from './TouchControls';
 
 const GameBoard = ({ onScoreUpdate, onGameOver, gameMode = '2player', aiDifficulty = 'medium', onlineConfig = null }) => {
@@ -26,6 +23,9 @@ const GameBoard = ({ onScoreUpdate, onGameOver, gameMode = '2player', aiDifficul
     height: GAME_CONFIG.CANVAS_HEIGHT 
   });
   const [forceUpdate, setForceUpdate] = useState(0);
+  const obstacleSpawnTimerRef = useRef(null);
+  const obstacleDespawnTimersRef = useRef([]);
+  const lastScoreRef = useRef({ score1: 0, score2: 0 });
   
   // Initialize game engine immediately with default size
   useEffect(() => {
@@ -62,22 +62,235 @@ const GameBoard = ({ onScoreUpdate, onGameOver, gameMode = '2player', aiDifficul
     return () => window.removeEventListener('resize', updateCanvasSize);
   }, []);
 
-  // Initialize obstacles (scaled for mobile)
+  // Generate random obstacles (scaled for mobile)
+  const generateRandomObstacles = useCallback((width, height, count = null, permanent = false) => {
+    const scaleX = width / GAME_CONFIG.CANVAS_WIDTH;
+    const scaleY = height / GAME_CONFIG.CANVAS_HEIGHT;
+    const obstacles = [];
+    
+    // If count specified, use it; otherwise random
+    let numHoles, numPoles;
+    if (count) {
+      // Mix of holes and poles for permanent obstacles
+      numHoles = Math.floor(count / 2); // Half holes, half poles
+      numPoles = count - numHoles;
+    } else {
+      numHoles = Math.floor(Math.random() * 3) + 1;
+      numPoles = Math.floor(Math.random() * 4) + 2;
+    }
+    
+    // Safe zones (avoid paddle areas and center)
+    const safeZoneTop = 50 * scaleY;
+    const safeZoneBottom = height - 50 * scaleY;
+    const safeZoneLeft = 100 * scaleX;
+    const safeZoneRight = width - 100 * scaleX;
+    
+    // Generate random holes
+    for (let i = 0; i < numHoles; i++) {
+      let x, y;
+      let attempts = 0;
+      do {
+        x = safeZoneLeft + Math.random() * (safeZoneRight - safeZoneLeft);
+        y = safeZoneTop + Math.random() * (safeZoneBottom - safeZoneTop);
+        attempts++;
+      } while (attempts < 50 && obstacles.some(obs => {
+        const dist = Math.sqrt(Math.pow(obs.x - x, 2) + Math.pow(obs.y - y, 2));
+        return dist < (GAME_CONFIG.HOLE_RADIUS * 3 * Math.min(scaleX, scaleY));
+      }));
+      
+      obstacles.push({
+        type: 'hole',
+        x,
+        y,
+        radius: GAME_CONFIG.HOLE_RADIUS * Math.min(scaleX, scaleY),
+        permanent: permanent, // Mark if permanent
+        id: permanent ? `perm-${Date.now()}-${i}` : null
+      });
+    }
+    
+    // Generate random poles
+    for (let i = 0; i < numPoles; i++) {
+      let x, y;
+      let attempts = 0;
+      do {
+        x = safeZoneLeft + Math.random() * (safeZoneRight - safeZoneLeft);
+        y = safeZoneTop + Math.random() * (safeZoneBottom - safeZoneTop);
+        attempts++;
+      } while (attempts < 50 && obstacles.some(obs => {
+        const dist = Math.sqrt(Math.pow(obs.x - x, 2) + Math.pow(obs.y - y, 2));
+        const minDist = obs.type === 'hole' 
+          ? GAME_CONFIG.HOLE_RADIUS * 2 * Math.min(scaleX, scaleY)
+          : Math.max(GAME_CONFIG.POLE_WIDTH * scaleX, GAME_CONFIG.POLE_HEIGHT * scaleY) * 2;
+        return dist < minDist;
+      }));
+      
+      obstacles.push({
+        type: 'pole',
+        x,
+        y,
+        width: GAME_CONFIG.POLE_WIDTH * scaleX,
+        height: GAME_CONFIG.POLE_HEIGHT * scaleY,
+        permanent: permanent, // Mark if permanent
+        id: permanent ? `perm-${Date.now()}-${i}` : null
+      });
+    }
+    
+    return obstacles;
+  }, []);
+
+  // Initialize obstacles (scaled for mobile) - random each game
   useEffect(() => {
+    if (canvasSize.width && canvasSize.height) {
+      // Start with ONLY permanent obstacles (creates suspense!)
+      const permanentObstacles = generateRandomObstacles(
+        canvasSize.width, 
+        canvasSize.height, 
+        GAME_CONFIG.PERMANENT_OBSTACLES,
+        true // Mark as permanent
+      );
+      obstaclesRef.current = permanentObstacles;
+      lastScoreRef.current = { score1: 0, score2: 0 };
+      
+      // Clear any existing timers
+      if (obstacleSpawnTimerRef.current) {
+        clearInterval(obstacleSpawnTimerRef.current);
+      }
+      obstacleDespawnTimersRef.current.forEach(timer => clearTimeout(timer));
+      obstacleDespawnTimersRef.current = [];
+      
+      // Start dynamic obstacle system if enabled (with initial delay for suspense)
+      if (GAME_CONFIG.DYNAMIC_OBSTACLES && GAME_CONFIG.TEMPORARY_OBSTACLES) {
+        setTimeout(() => {
+          startDynamicObstacleSystem();
+        }, GAME_CONFIG.INITIAL_DELAY);
+      }
+    }
+    
+    return () => {
+      if (obstacleSpawnTimerRef.current) {
+        clearInterval(obstacleSpawnTimerRef.current);
+      }
+      obstacleDespawnTimersRef.current.forEach(timer => clearTimeout(timer));
+      obstacleDespawnTimersRef.current = [];
+    };
+  }, [canvasSize, generateRandomObstacles, startDynamicObstacleSystem]); // Regenerate on game restart
+
+  // Dynamic obstacle spawning system
+  const startDynamicObstacleSystem = useCallback(() => {
+    if (!GAME_CONFIG.DYNAMIC_OBSTACLES || !GAME_CONFIG.TEMPORARY_OBSTACLES) return;
+    
+    // Spawn new temporary obstacles periodically
+    obstacleSpawnTimerRef.current = setInterval(() => {
+      if (!gameEngineRef.current) return;
+      const state = gameEngineRef.current.getState();
+      
+      // Only spawn during gameplay
+      if (state.gameState !== 'playing') return;
+      
+      // Count only temporary obstacles (not permanent ones)
+      const tempObstacleCount = obstaclesRef.current.filter(obs => !obs.permanent).length;
+      
+      // Don't spawn if we have too many temporary obstacles
+      if (tempObstacleCount >= GAME_CONFIG.MAX_TEMPORARY_OBSTACLES) return;
+      
+      // Random chance to spawn (60% chance)
+      if (Math.random() > 0.4) {
+        spawnRandomObstacle();
+      }
+    }, GAME_CONFIG.OBSTACLE_SPAWN_INTERVAL);
+  }, []);
+
+  // Spawn a single random obstacle
+  const spawnRandomObstacle = useCallback(() => {
+    if (!canvasSize.width || !canvasSize.height) return;
+    
     const scaleX = canvasSize.width / GAME_CONFIG.CANVAS_WIDTH;
     const scaleY = canvasSize.height / GAME_CONFIG.CANVAS_HEIGHT;
+    const safeZoneTop = 50 * scaleY;
+    const safeZoneBottom = canvasSize.height - 50 * scaleY;
+    const safeZoneLeft = 100 * scaleX;
+    const safeZoneRight = canvasSize.width - 100 * scaleX;
     
-    obstaclesRef.current = [
-      // Holes
-      { type: 'hole', x: 200 * scaleX, y: 200 * scaleY, radius: GAME_CONFIG.HOLE_RADIUS * Math.min(scaleX, scaleY) },
-      { type: 'hole', x: 600 * scaleX, y: 400 * scaleY, radius: GAME_CONFIG.HOLE_RADIUS * Math.min(scaleX, scaleY) },
-      // Poles
-      { type: 'pole', x: 400 * scaleX, y: 150 * scaleY, width: GAME_CONFIG.POLE_WIDTH * scaleX, height: GAME_CONFIG.POLE_HEIGHT * scaleY },
-      { type: 'pole', x: 400 * scaleX, y: 450 * scaleY, width: GAME_CONFIG.POLE_WIDTH * scaleX, height: GAME_CONFIG.POLE_HEIGHT * scaleY },
-      { type: 'pole', x: 150 * scaleX, y: 300 * scaleY, width: GAME_CONFIG.POLE_WIDTH * scaleX, height: GAME_CONFIG.POLE_HEIGHT * scaleY },
-      { type: 'pole', x: 650 * scaleX, y: 300 * scaleY, width: GAME_CONFIG.POLE_WIDTH * scaleX, height: GAME_CONFIG.POLE_HEIGHT * scaleY }
-    ];
+    // Randomly choose hole or pole (60% pole, 40% hole)
+    const isHole = Math.random() < 0.4;
+    let x, y;
+    let attempts = 0;
+    
+    do {
+      x = safeZoneLeft + Math.random() * (safeZoneRight - safeZoneLeft);
+      y = safeZoneTop + Math.random() * (safeZoneBottom - safeZoneTop);
+      attempts++;
+    } while (attempts < 50 && obstaclesRef.current.some(obs => {
+      const dist = Math.sqrt(Math.pow(obs.x - x, 2) + Math.pow(obs.y - y, 2));
+      const minDist = obs.type === 'hole' 
+        ? GAME_CONFIG.HOLE_RADIUS * 3 * Math.min(scaleX, scaleY)
+        : Math.max(GAME_CONFIG.POLE_WIDTH * scaleX, GAME_CONFIG.POLE_HEIGHT * scaleY) * 3;
+      return dist < minDist;
+    }));
+    
+    const newObstacle = isHole ? {
+      type: 'hole',
+      x,
+      y,
+      radius: GAME_CONFIG.HOLE_RADIUS * Math.min(scaleX, scaleY),
+      id: Date.now() + Math.random() // Unique ID for tracking
+    } : {
+      type: 'pole',
+      x,
+      y,
+      width: GAME_CONFIG.POLE_WIDTH * scaleX,
+      height: GAME_CONFIG.POLE_HEIGHT * scaleY,
+      id: Date.now() + Math.random()
+    };
+    
+    obstaclesRef.current.push(newObstacle);
+    setForceUpdate(prev => prev + 1); // Trigger re-render
+    
+    // Schedule despawn (only for temporary obstacles)
+    const despawnTimer = setTimeout(() => {
+      obstaclesRef.current = obstaclesRef.current.filter(obs => obs.id !== newObstacle.id);
+      setForceUpdate(prev => prev + 1);
+    }, GAME_CONFIG.OBSTACLE_DESPAWN_INTERVAL);
+    
+    obstacleDespawnTimersRef.current.push(despawnTimer);
   }, [canvasSize]);
+
+  // Spawn obstacle on score change (with delay for suspense)
+  useEffect(() => {
+    if (!gameEngineRef.current || !GAME_CONFIG.OBSTACLE_SPAWN_ON_SCORE) return;
+    
+    const state = gameEngineRef.current.getState();
+    const currentScore = { score1: state.score1, score2: state.score2 };
+    
+    // Check if score changed
+    if (currentScore.score1 !== lastScoreRef.current.score1 || 
+        currentScore.score2 !== lastScoreRef.current.score2) {
+      // Spawn obstacle after score (50% chance, with delay for suspense)
+      const tempObstacleCount = obstaclesRef.current.filter(obs => !obs.permanent).length;
+      if (Math.random() < 0.5 && tempObstacleCount < GAME_CONFIG.MAX_TEMPORARY_OBSTACLES) {
+        setTimeout(() => spawnRandomObstacle(), 1000); // 1 second delay for suspense
+      }
+      lastScoreRef.current = currentScore;
+    }
+  }, [forceUpdate, spawnRandomObstacle]);
+
+  // Spawn obstacle on score change
+  useEffect(() => {
+    if (!gameEngineRef.current || !GAME_CONFIG.OBSTACLE_SPAWN_ON_SCORE) return;
+    
+    const state = gameEngineRef.current.getState();
+    const currentScore = { score1: state.score1, score2: state.score2 };
+    
+    // Check if score changed
+    if (currentScore.score1 !== lastScoreRef.current.score1 || 
+        currentScore.score2 !== lastScoreRef.current.score2) {
+      // Spawn obstacle after score (50% chance)
+      if (Math.random() < 0.5 && obstaclesRef.current.length < GAME_CONFIG.MAX_ACTIVE_OBSTACLES) {
+        setTimeout(() => spawnRandomObstacle(), 500); // Small delay for visual effect
+      }
+      lastScoreRef.current = currentScore;
+    }
+  }, [forceUpdate, spawnRandomObstacle]);
 
   // Initialize game engine and AI
   useEffect(() => {
@@ -178,12 +391,145 @@ const GameBoard = ({ onScoreUpdate, onGameOver, gameMode = '2player', aiDifficul
     };
   }, [gameMode, aiDifficulty, onlineConfig, onScoreUpdate, onGameOver, canvasSize]);
 
+  // Render function for canvas
+  const render = useCallback((ctx, state) => {
+    if (!ctx) return;
+    
+    const { width, height } = canvasSize;
+    
+    // Clear canvas
+    ctx.fillStyle = GAME_CONFIG.COLORS.BACKGROUND;
+    ctx.fillRect(0, 0, width, height);
+    
+    // Draw goal lines
+    ctx.fillStyle = GAME_CONFIG.COLORS.GOAL_LINE;
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = GAME_CONFIG.COLORS.GOAL_LINE;
+    ctx.fillRect(0, 0, width, 3);
+    ctx.fillRect(0, height - 3, width, 3);
+    ctx.shadowBlur = 0;
+    
+    // Draw center line
+    ctx.strokeStyle = GAME_CONFIG.COLORS.OBSTACLE;
+    ctx.globalAlpha = 0.3;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, height / 2);
+    ctx.lineTo(width, height / 2);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+    
+    // Draw obstacles
+    if (GAME_CONFIG.OBSTACLES_ENABLED && obstaclesRef.current) {
+      obstaclesRef.current.forEach(obstacle => {
+        if (obstacle.type === 'hole') {
+          // Draw hole with darker center and dashed border
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.6)'; // Dark center
+          ctx.beginPath();
+          ctx.arc(obstacle.x, obstacle.y, obstacle.radius, 0, Math.PI * 2);
+          ctx.fill();
+          
+          // Draw dashed border
+          ctx.strokeStyle = GAME_CONFIG.COLORS.OBSTACLE;
+          ctx.lineWidth = 3;
+          ctx.setLineDash([8, 4]);
+          ctx.beginPath();
+          ctx.arc(obstacle.x, obstacle.y, obstacle.radius, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.setLineDash([]);
+          
+          // Add inner shadow effect
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+          ctx.beginPath();
+          ctx.arc(obstacle.x, obstacle.y, obstacle.radius * 0.7, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (obstacle.type === 'pole') {
+          ctx.fillStyle = GAME_CONFIG.COLORS.OBSTACLE;
+          ctx.strokeStyle = GAME_CONFIG.COLORS.BALL;
+          ctx.lineWidth = 2;
+          ctx.shadowBlur = 10;
+          ctx.shadowColor = GAME_CONFIG.COLORS.OBSTACLE;
+          ctx.fillRect(obstacle.x - obstacle.width / 2, obstacle.y - obstacle.height / 2, obstacle.width, obstacle.height);
+          ctx.strokeRect(obstacle.x - obstacle.width / 2, obstacle.y - obstacle.height / 2, obstacle.width, obstacle.height);
+          ctx.shadowBlur = 0;
+        }
+      });
+    }
+    
+    // Draw paddles
+    const paddle1 = state.paddle1;
+    const paddle2 = state.paddle2;
+    
+    // Helper function for rounded rectangles
+    const roundRect = (x, y, w, h, r) => {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.lineTo(x + w - r, y);
+      ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+      ctx.lineTo(x + w, y + h - r);
+      ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+      ctx.lineTo(x + r, y + h);
+      ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+      ctx.lineTo(x, y + r);
+      ctx.quadraticCurveTo(x, y, x + r, y);
+      ctx.closePath();
+    };
+    
+    // Paddle 1 (top)
+    ctx.fillStyle = gameMode === 'ai' ? '#533483' : GAME_CONFIG.COLORS.PADDLE;
+    ctx.strokeStyle = GAME_CONFIG.COLORS.BALL;
+    ctx.lineWidth = 2;
+    ctx.shadowBlur = gameMode === 'ai' ? 20 : 15;
+    ctx.shadowColor = gameMode === 'ai' ? '#533483' : GAME_CONFIG.COLORS.PADDLE;
+    roundRect(paddle1.x, paddle1.y, paddle1.width, paddle1.height, 8);
+    ctx.fill();
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    
+    if (gameMode === 'ai') {
+      ctx.fillStyle = GAME_CONFIG.COLORS.TEXT;
+      ctx.font = 'bold 10px Rajdhani';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.globalAlpha = 0.8;
+      ctx.fillText('AI', paddle1.x + paddle1.width / 2, paddle1.y + paddle1.height / 2);
+      ctx.globalAlpha = 1;
+    }
+    
+    // Paddle 2 (bottom)
+    ctx.fillStyle = GAME_CONFIG.COLORS.PADDLE;
+    ctx.strokeStyle = GAME_CONFIG.COLORS.BALL;
+    ctx.shadowBlur = 15;
+    ctx.shadowColor = GAME_CONFIG.COLORS.PADDLE;
+    roundRect(paddle2.x, paddle2.y, paddle2.width, paddle2.height, 8);
+    ctx.fill();
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    
+    // Draw ball
+    const ball = state.ball;
+    ctx.fillStyle = GAME_CONFIG.COLORS.BALL;
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = GAME_CONFIG.COLORS.BALL;
+    ctx.beginPath();
+    ctx.arc(ball.x, ball.y, ball.size / 2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  }, [canvasSize, gameMode]);
+
   // Game loop
   const gameLoop = useCallback(() => {
     if (!gameEngineRef.current) return;
 
     const engine = gameEngineRef.current;
     const currentState = engine.getState();
+    
+    // Render to canvas
+    const canvas = canvasRef.current;
+    if (canvas) {
+      const ctx = canvas.getContext('2d');
+      render(ctx, currentState);
+    }
 
     // Handle paddle movement based on game mode
     if (gameMode === '2player') {
@@ -286,7 +632,7 @@ const GameBoard = ({ onScoreUpdate, onGameOver, gameMode = '2player', aiDifficul
       onGameOver(updatedState.winner);
     }
     // Game loop continuation is handled by useEffect
-  }, [onScoreUpdate, onGameOver, gameMode, aiDifficulty, onlineConfig]);
+  }, [onScoreUpdate, onGameOver, gameMode, aiDifficulty, onlineConfig, render]);
 
   // Start game loop
   useEffect(() => {
@@ -347,88 +693,33 @@ const GameBoard = ({ onScoreUpdate, onGameOver, gameMode = '2player', aiDifficul
 
   const state = gameEngineRef.current.getState();
 
+  // Initialize canvas context
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (canvas) {
+      canvas.width = canvasSize.width;
+      canvas.height = canvasSize.height;
+      const ctx = canvas.getContext('2d');
+      if (ctx && gameEngineRef.current) {
+        render(ctx, gameEngineRef.current.getState());
+      }
+    }
+  }, [canvasSize, render]);
+
   return (
     <>
-      <div
-        ref={canvasRef}
-        style={{
-          position: 'relative',
-          width: canvasSize.width,
-          height: canvasSize.height,
-          backgroundColor: GAME_CONFIG.COLORS.BACKGROUND,
-          border: `3px solid ${GAME_CONFIG.COLORS.GOAL_LINE}`,
-          borderRadius: '10px',
-          overflow: 'hidden',
-          boxShadow: '0 0 30px rgba(0, 0, 0, 0.5)',
-          maxWidth: '100%',
-          margin: '0 auto'
-        }}
-      >
-      {/* Goal lines */}
-      <div
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          height: '3px',
-          backgroundColor: GAME_CONFIG.COLORS.GOAL_LINE,
-          boxShadow: `0 0 10px ${GAME_CONFIG.COLORS.GOAL_LINE}`
-        }}
-      />
-      <div
-        style={{
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          height: '3px',
-          backgroundColor: GAME_CONFIG.COLORS.GOAL_LINE,
-          boxShadow: `0 0 10px ${GAME_CONFIG.COLORS.GOAL_LINE}`
-        }}
-      />
-
-      {/* Center line */}
-      <div
-        style={{
-          position: 'absolute',
-          top: '50%',
-          left: 0,
-          right: 0,
-          height: '2px',
-          backgroundColor: GAME_CONFIG.COLORS.OBSTACLE,
-          opacity: 0.3,
-          transform: 'translateY(-50%)'
-        }}
-      />
-
-      {/* Obstacles */}
-      <Obstacles obstacles={obstaclesRef.current} />
-
-      {/* Paddles */}
-      <Paddle
-        x={state.paddle1.x}
-        y={state.paddle1.y}
-        width={state.paddle1.width}
-        height={state.paddle1.height}
-        isTop={true}
-        isAI={gameMode === 'ai'}
-      />
-      <Paddle
-        x={state.paddle2.x}
-        y={state.paddle2.y}
-        width={state.paddle2.width}
-        height={state.paddle2.height}
-        isTop={false}
-        isAI={false}
-      />
-
-      {/* Ball */}
-      <Ball
-        x={state.ball.x}
-        y={state.ball.y}
-        size={state.ball.size}
-      />
+      <div style={{ position: 'relative', display: 'inline-block' }}>
+        <canvas
+          ref={canvasRef}
+          style={{
+            display: 'block',
+            border: `3px solid ${GAME_CONFIG.COLORS.GOAL_LINE}`,
+            borderRadius: '10px',
+            boxShadow: '0 0 30px rgba(0, 0, 0, 0.5)',
+            maxWidth: '100%',
+            height: 'auto'
+          }}
+        />
 
       {/* Start screen overlay */}
       {state.gameState === 'ready' && (
@@ -437,15 +728,16 @@ const GameBoard = ({ onScoreUpdate, onGameOver, gameMode = '2player', aiDifficul
             position: 'absolute',
             top: 0,
             left: 0,
-            right: 0,
-            bottom: 0,
+            width: canvasSize.width,
+            height: canvasSize.height,
             backgroundColor: 'rgba(0, 0, 0, 0.8)',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
             color: GAME_CONFIG.COLORS.TEXT,
-            zIndex: 1000
+            zIndex: 1000,
+            borderRadius: '10px'
           }}
         >
           <div style={{ fontSize: '36px', fontWeight: 'bold', marginBottom: '20px' }}>
@@ -492,8 +784,8 @@ const GameBoard = ({ onScoreUpdate, onGameOver, gameMode = '2player', aiDifficul
             position: 'absolute',
             top: 0,
             left: 0,
-            right: 0,
-            bottom: 0,
+            width: canvasSize.width,
+            height: canvasSize.height,
             backgroundColor: 'rgba(0, 0, 0, 0.7)',
             display: 'flex',
             flexDirection: 'column',
@@ -502,7 +794,8 @@ const GameBoard = ({ onScoreUpdate, onGameOver, gameMode = '2player', aiDifficul
             color: GAME_CONFIG.COLORS.TEXT,
             fontSize: '32px',
             fontWeight: 'bold',
-            zIndex: 1000
+            zIndex: 1000,
+            borderRadius: '10px'
           }}
         >
           <div style={{ marginBottom: '20px' }}>PAUSED</div>

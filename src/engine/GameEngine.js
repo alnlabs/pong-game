@@ -34,14 +34,18 @@ export class GameEngine {
       x: this.canvasWidth / 2 - GAME_CONFIG.PADDLE_WIDTH / 2,
       y: GAME_CONFIG.PADDLE_MARGIN,
       width: GAME_CONFIG.PADDLE_WIDTH,
-      height: GAME_CONFIG.PADDLE_HEIGHT
+      height: GAME_CONFIG.PADDLE_HEIGHT,
+      lastX: this.canvasWidth / 2 - GAME_CONFIG.PADDLE_WIDTH / 2,
+      velocity: 0 // Track paddle movement
     };
 
     this.paddle2 = {
       x: this.canvasWidth / 2 - GAME_CONFIG.PADDLE_WIDTH / 2,
       y: this.canvasHeight - GAME_CONFIG.PADDLE_MARGIN - GAME_CONFIG.PADDLE_HEIGHT,
       width: GAME_CONFIG.PADDLE_WIDTH,
-      height: GAME_CONFIG.PADDLE_HEIGHT
+      height: GAME_CONFIG.PADDLE_HEIGHT,
+      lastX: this.canvasWidth / 2 - GAME_CONFIG.PADDLE_WIDTH / 2,
+      velocity: 0 // Track paddle movement
     };
 
     // Game state
@@ -60,6 +64,7 @@ export class GameEngine {
 
   updatePaddle(paddleNum, direction) {
     const paddle = paddleNum === 1 ? this.paddle1 : this.paddle2;
+    const oldX = paddle.x;
     const newX = paddle.x + (direction * GAME_CONFIG.PADDLE_SPEED);
     
     // Keep paddle within bounds
@@ -67,6 +72,10 @@ export class GameEngine {
       this.canvasWidth - paddle.width,
       newX
     ));
+    
+    // Calculate paddle velocity (movement direction and speed)
+    paddle.velocity = (paddle.x - oldX) / GAME_CONFIG.PADDLE_SPEED; // -1, 0, or 1
+    paddle.lastX = oldX;
   }
 
   updateBall(obstacles = []) {
@@ -97,9 +106,20 @@ export class GameEngine {
       });
     }
 
+    // Update paddle velocities before collision check (for spin calculation)
+    // Calculate velocity based on position change
+    const paddle1Vel = (this.paddle1.x - (this.paddle1.lastX || this.paddle1.x)) / GAME_CONFIG.PADDLE_SPEED;
+    const paddle2Vel = (this.paddle2.x - (this.paddle2.lastX || this.paddle2.x)) / GAME_CONFIG.PADDLE_SPEED;
+    this.paddle1.velocity = paddle1Vel;
+    this.paddle2.velocity = paddle2Vel;
+    
     // Check collision with paddles
     this.handlePaddleCollision(this.paddle1, 1);
     this.handlePaddleCollision(this.paddle2, -1);
+    
+    // Update last positions after collision check
+    this.paddle1.lastX = this.paddle1.x;
+    this.paddle2.lastX = this.paddle2.x;
 
     // Check for goals
     if (this.ball.y < 0) {
@@ -158,14 +178,29 @@ export class GameEngine {
     // Calculate hit position on paddle (0 = left edge, 1 = right edge)
     const hitPos = (this.ball.x - paddle.x) / paddle.width;
     
-    // Adjust angle based on where ball hits paddle
-    const angle = (hitPos - 0.5) * Math.PI / 3; // Max 60 degrees
+    // Base angle from hit position (max 60 degrees)
+    let angle = (hitPos - 0.5) * Math.PI / 3;
+    
+    // Add spin/angle based on paddle movement (up to 30 degrees additional)
+    // If paddle moving left while hitting, add left spin
+    // If paddle moving right while hitting, add right spin
+    const paddleSpin = paddle.velocity * (Math.PI / 6); // Max 30 degrees spin
+    angle += paddleSpin;
+    
+    // Clamp angle to prevent too extreme angles (max 75 degrees total)
+    const maxAngle = Math.PI / 2.4; // ~75 degrees
+    angle = Math.max(-maxAngle, Math.min(maxAngle, angle));
     
     // Update velocity with new angle
     const speed = Math.sqrt(this.ball.vx ** 2 + this.ball.vy ** 2);
     const direction = this.ball.vy > 0 ? -1 : 1; // Determine direction (up or down)
     this.ball.vx = Math.sin(angle) * speed;
     this.ball.vy = direction * Math.cos(angle) * speed;
+    
+    // Add speed boost if paddle was moving (adds excitement!)
+    if (Math.abs(paddle.velocity) > 0.5) {
+      this.ball.vx += paddle.velocity * 0.5; // Small speed boost
+    }
     
     // Increase speed gradually
     this.hitCount++;
