@@ -21,7 +21,25 @@ const GameBoard = ({ onScoreUpdate, onGameOver, gameMode = '2player', aiDifficul
   const syncIntervalRef = useRef(null);
   const isHostRef = useRef(false);
   const touchDirectionRef = useRef({ player1: 0, player2: 0 });
-  const [canvasSize, setCanvasSize] = useState({ width: GAME_CONFIG.CANVAS_WIDTH, height: GAME_CONFIG.CANVAS_HEIGHT });
+  const [canvasSize, setCanvasSize] = useState({ 
+    width: GAME_CONFIG.CANVAS_WIDTH, 
+    height: GAME_CONFIG.CANVAS_HEIGHT 
+  });
+  
+  // Initialize game engine immediately with default size
+  useEffect(() => {
+    if (!gameEngineRef.current) {
+      gameEngineRef.current = new GameEngine(
+        GAME_CONFIG.CANVAS_WIDTH,
+        GAME_CONFIG.CANVAS_HEIGHT
+      );
+      
+      // Initialize AI controller if in AI mode
+      if (gameMode === 'ai') {
+        aiControllerRef.current = new AIController(aiDifficulty);
+      }
+    }
+  }, []); // Run only once on mount
 
   // Calculate responsive canvas size
   useEffect(() => {
@@ -62,18 +80,20 @@ const GameBoard = ({ onScoreUpdate, onGameOver, gameMode = '2player', aiDifficul
 
   // Initialize game engine and AI
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas || !canvasSize.width || !canvasSize.height) return;
-
-    // Reinitialize engine when canvas size changes
-    gameEngineRef.current = new GameEngine(
-      canvasSize.width,
-      canvasSize.height
-    );
-
-    // Initialize AI controller if in AI mode
-    if (gameMode === 'ai') {
-      aiControllerRef.current = new AIController(aiDifficulty);
+    // Initialize with canvas size (has default values from useState)
+    const width = canvasSize.width || GAME_CONFIG.CANVAS_WIDTH;
+    const height = canvasSize.height || GAME_CONFIG.CANVAS_HEIGHT;
+    
+    // Only reinitialize if size changed
+    if (gameEngineRef.current && 
+        (gameEngineRef.current.canvasWidth !== width || 
+         gameEngineRef.current.canvasHeight !== height)) {
+      gameEngineRef.current = new GameEngine(width, height);
+      
+      // Reinitialize AI controller if in AI mode
+      if (gameMode === 'ai') {
+        aiControllerRef.current = new AIController(aiDifficulty);
+      }
     }
 
     // Set up online mode
@@ -299,8 +319,11 @@ const GameBoard = ({ onScoreUpdate, onGameOver, gameMode = '2player', aiDifficul
     touchDirectionRef.current[`player${playerNumber}`] = direction;
   }, []);
 
+  // Ensure game engine is initialized (fallback for production)
   if (!gameEngineRef.current) {
-    return <div>Loading...</div>;
+    const width = canvasSize.width || GAME_CONFIG.CANVAS_WIDTH;
+    const height = canvasSize.height || GAME_CONFIG.CANVAS_HEIGHT;
+    gameEngineRef.current = new GameEngine(width, height);
   }
 
   const state = gameEngineRef.current.getState();
