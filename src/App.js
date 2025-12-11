@@ -81,6 +81,13 @@ function App() {
     }
   };
 
+  const handleAuthCancel = () => {
+    // Go back to 2-player mode when canceling auth
+    setGameMode('2player');
+    setShowOnlineLobby(false);
+    setOnlineConfig(null);
+  };
+
   const handleOnlineGameStart = (config) => {
     setOnlineConfig(config);
     setShowOnlineLobby(false);
@@ -143,7 +150,7 @@ function App() {
     <div className="App">
       <div className="game-container">
         <h1 className="game-title">PONG GAME</h1>
-        {showAuth && <Auth onAuthSuccess={handleAuthSuccess} />}
+        {showAuth && <Auth onAuthSuccess={handleAuthSuccess} onCancel={handleAuthCancel} />}
         {user && gameMode === 'online' && (
           <div
             style={{

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import firebaseAuth from '../utils/firebaseAuth';
 import { GAME_CONFIG } from '../config/gameConfig';
 
-const Auth = ({ onAuthSuccess }) => {
+const Auth = ({ onAuthSuccess, onCancel }) => {
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -86,16 +86,40 @@ const Auth = ({ onAuthSuccess }) => {
         boxShadow: `0 0 30px ${GAME_CONFIG.COLORS.BALL}`
       }}
     >
-        <h2
-          style={{
-            color: GAME_CONFIG.COLORS.TEXT,
-            marginBottom: '30px',
-            textAlign: 'center',
-            fontSize: '28px'
-          }}
-        >
-          {isSignUp ? 'Create Account' : 'Sign In'}
-        </h2>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
+          {onCancel && (
+            <button
+              onClick={onCancel}
+              style={{
+                background: 'none',
+                border: `1px solid ${GAME_CONFIG.COLORS.TEXT}`,
+                color: GAME_CONFIG.COLORS.TEXT,
+                cursor: 'pointer',
+                fontSize: '14px',
+                padding: '8px 16px',
+                borderRadius: '8px',
+                opacity: 0.8,
+                transition: 'opacity 0.2s'
+              }}
+              onMouseEnter={(e) => e.target.style.opacity = '1'}
+              onMouseLeave={(e) => e.target.style.opacity = '0.8'}
+            >
+              ← Back
+            </button>
+          )}
+          <h2
+            style={{
+              color: GAME_CONFIG.COLORS.TEXT,
+              textAlign: 'center',
+              fontSize: '28px',
+              margin: 0,
+              flex: 1
+            }}
+          >
+            {isSignUp ? 'Create Account' : 'Sign In'}
+          </h2>
+          {onCancel && <div style={{ width: '100px' }}></div>}
+        </div>
 
         <form onSubmit={handleSubmit}>
           {isSignUp && (
