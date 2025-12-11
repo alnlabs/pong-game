@@ -25,6 +25,7 @@ const GameBoard = ({ onScoreUpdate, onGameOver, gameMode = '2player', aiDifficul
     width: GAME_CONFIG.CANVAS_WIDTH, 
     height: GAME_CONFIG.CANVAS_HEIGHT 
   });
+  const [forceUpdate, setForceUpdate] = useState(0);
   
   // Initialize game engine immediately with default size
   useEffect(() => {
@@ -319,9 +320,11 @@ const GameBoard = ({ onScoreUpdate, onGameOver, gameMode = '2player', aiDifficul
           // If ready, start the game
           if (state.gameState === 'ready') {
             gameEngineRef.current.start();
+            setForceUpdate(prev => prev + 1); // Force re-render
           } else {
             // Otherwise, toggle pause
             gameEngineRef.current.pause();
+            setForceUpdate(prev => prev + 1); // Force re-render
           }
         }
       }
@@ -452,6 +455,7 @@ const GameBoard = ({ onScoreUpdate, onGameOver, gameMode = '2player', aiDifficul
             onClick={() => {
               if (gameEngineRef.current) {
                 gameEngineRef.current.start();
+                setForceUpdate(prev => prev + 1); // Force re-render
               }
             }}
             style={{
