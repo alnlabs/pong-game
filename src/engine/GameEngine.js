@@ -267,9 +267,25 @@ export class GameEngine {
     const distance = Math.sqrt(dx ** 2 + dy ** 2);
     const radius = hole.radius || GAME_CONFIG.HOLE_RADIUS;
 
-    // If ball falls into hole, reset ball
+    // If ball falls into hole, determine who gets the point
     if (distance < radius - this.ball.size / 2) {
+      // Determine which player's side the hole is closer to
+      // If hole is in upper half, player 2 (bottom) gets point
+      // If hole is in lower half, player 1 (top) gets point
+      const holeY = hole.y;
+      const midY = this.canvasHeight / 2;
+      
+      if (holeY < midY) {
+        // Hole in upper half - player 2 (bottom) gets point
+        this.score2++;
+      } else {
+        // Hole in lower half - player 1 (top) gets point
+        this.score1++;
+      }
+      
       this.resetBall();
+      this.checkGameOver();
+      
       // Return to ready state after hole (player must start again)
       if (this.gameState !== 'gameOver') {
         this.gameState = 'ready';

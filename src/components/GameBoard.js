@@ -634,14 +634,16 @@ const GameBoard = ({ onScoreUpdate, onGameOver, gameMode = '2player', aiDifficul
       multiplayerManager.sendScoreUpdate(updatedState.score1, updatedState.score2);
     }
 
-    // Check for game over
-    if (updatedState.gameState === 'gameOver' && onGameOver) {
-      if (gameMode === 'online' && onlineConfig && isHostRef.current) {
-        const multiplayerType = onlineConfig.multiplayerType || 'firebase';
-        const multiplayerManager = multiplayerType === 'firebase' ? firebaseMultiplayer : socketManager;
-        multiplayerManager.sendGameOver(updatedState.winner);
+    // Check for game over - check every frame to catch game over state
+    if (updatedState.gameState === 'gameOver' && updatedState.winner !== null) {
+      if (onGameOver) {
+        if (gameMode === 'online' && onlineConfig && isHostRef.current) {
+          const multiplayerType = onlineConfig.multiplayerType || 'firebase';
+          const multiplayerManager = multiplayerType === 'firebase' ? firebaseMultiplayer : socketManager;
+          multiplayerManager.sendGameOver(updatedState.winner);
+        }
+        onGameOver(updatedState.winner);
       }
-      onGameOver(updatedState.winner);
     }
     // Game loop continuation is handled by useEffect
   }, [onScoreUpdate, onGameOver, gameMode, aiDifficulty, onlineConfig, render]);
