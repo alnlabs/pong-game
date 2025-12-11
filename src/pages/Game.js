@@ -139,7 +139,7 @@ const Game = () => {
 
   return (
     <div className="App">
-      <div className="game-container">
+      <div className="game-container" style={{ height: '100%', overflow: 'hidden' }}>
         {/* Minimal header - only show Home button */}
         <div style={{ 
           width: '100%', 

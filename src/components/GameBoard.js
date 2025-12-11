@@ -55,28 +55,33 @@ const GameBoard = ({ onScoreUpdate, onGameOver, gameMode = '2player', aiDifficul
       const viewportHeight = window.innerHeight;
       const viewportWidth = window.innerWidth;
       
-      // Account for UI elements:
-      // - App padding: ~16px top/bottom
-      // - Home button header: ~26px
-      // - ScoreBoard: ~46px (compact)
-      // - Bottom padding: ~16px
-      const uiHeight = 16 + 26 + 46 + 16; // Total UI height (~104px)
+      // Get actual safe area insets
+      const safeAreaTop = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--safe-area-inset-top')) || 
+                         parseInt(getComputedStyle(document.documentElement).getPropertyValue('env(safe-area-inset-top)')) || 0;
+      const safeAreaBottom = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--safe-area-inset-bottom')) || 
+                             parseInt(getComputedStyle(document.documentElement).getPropertyValue('env(safe-area-inset-bottom)')) || 0;
       
-      // Account for safe areas (try to get them, fallback to 0)
-      let safeAreaTop = 0;
-      let safeAreaBottom = 0;
-      try {
-        const style = window.getComputedStyle(document.documentElement);
-        safeAreaTop = parseInt(style.getPropertyValue('env(safe-area-inset-top)')) || 0;
-        safeAreaBottom = parseInt(style.getPropertyValue('env(safe-area-inset-bottom)')) || 0;
-      } catch (e) {
-        // Fallback if env() not supported
-      }
+      // Account for UI elements with more accurate measurements:
+      // - App padding top: 8px + safe area
+      // - App padding bottom: 8px + safe area
+      // - Home button header: ~28px (button + margin)
+      // - ScoreBoard: ~48px (compact with padding)
+      // - Margin between elements: ~6px
+      // - Buffer for rounding errors: ~10px
+      const appPaddingTop = 8 + safeAreaTop;
+      const appPaddingBottom = 8 + safeAreaBottom;
+      const headerHeight = 28;
+      const scoreBoardHeight = 48;
+      const margins = 6;
+      const buffer = 10;
       
-      const availableHeight = viewportHeight - uiHeight - safeAreaTop - safeAreaBottom;
+      const totalUIHeight = appPaddingTop + appPaddingBottom + headerHeight + scoreBoardHeight + margins + buffer;
+      const availableHeight = viewportHeight - totalUIHeight;
       
       // Account for horizontal padding
-      const horizontalPadding = 24;
+      const appPaddingLeft = 8;
+      const appPaddingRight = 8;
+      const horizontalPadding = appPaddingLeft + appPaddingRight;
       const availableWidth = viewportWidth - horizontalPadding;
       
       const aspectRatio = GAME_CONFIG.CANVAS_HEIGHT / GAME_CONFIG.CANVAS_WIDTH;
@@ -85,18 +90,32 @@ const GameBoard = ({ onScoreUpdate, onGameOver, gameMode = '2player', aiDifficul
       const maxWidthFromHeight = availableHeight / aspectRatio;
       const maxWidth = Math.min(availableWidth, maxWidthFromHeight);
       
-      // Ensure minimum size for playability
+      // Ensure minimum size for playability, but don't exceed available space
       const minWidth = 280;
-      const width = Math.max(minWidth, Math.min(maxWidth, GAME_CONFIG.CANVAS_WIDTH));
+      const width = Math.max(minWidth, Math.min(maxWidth, GAME_CONFIG.CANVAS_WIDTH, availableWidth));
       const height = width * aspectRatio;
       
-      setCanvasSize({ width, height });
+      // Double-check height doesn't exceed available space
+      const finalHeight = Math.min(height, availableHeight);
+      const finalWidth = finalHeight / aspectRatio;
+      
+      setCanvasSize({ 
+        width: Math.max(minWidth, Math.min(finalWidth, availableWidth)), 
+        height: finalHeight 
+      });
     };
 
+    // Small delay to ensure DOM is ready
+    const timeoutId = setTimeout(updateCanvasSize, 100);
     updateCanvasSize();
+    
     window.addEventListener('resize', updateCanvasSize);
-    window.addEventListener('orientationchange', updateCanvasSize);
+    window.addEventListener('orientationchange', () => {
+      setTimeout(updateCanvasSize, 200); // Delay for orientation change
+    });
+    
     return () => {
+      clearTimeout(timeoutId);
       window.removeEventListener('resize', updateCanvasSize);
       window.removeEventListener('orientationchange', updateCanvasSize);
     };
@@ -758,12 +777,15 @@ const GameBoard = ({ onScoreUpdate, onGameOver, gameMode = '2player', aiDifficul
     <>
       <div style={{ 
         position: 'relative', 
-        display: 'inline-block',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
         width: '100%',
         maxWidth: '100%',
         boxSizing: 'border-box',
         flexShrink: 1,
-        minHeight: 0
+        minHeight: 0,
+        overflow: 'hidden'
       }}>
         <canvas
           ref={canvasRef}
@@ -772,9 +794,10 @@ const GameBoard = ({ onScoreUpdate, onGameOver, gameMode = '2player', aiDifficul
             border: `3px solid ${GAME_CONFIG.COLORS.GOAL_LINE}`,
             borderRadius: '10px',
             boxShadow: '0 0 30px rgba(0, 0, 0, 0.5)',
+            width: `${canvasSize.width}px`,
+            height: `${canvasSize.height}px`,
             maxWidth: '100%',
-            width: '100%',
-            height: 'auto',
+            maxHeight: '100%',
             touchAction: 'none', // Prevent default touch behaviors on canvas
             boxSizing: 'border-box'
           }}
@@ -797,7 +820,8 @@ const GameBoard = ({ onScoreUpdate, onGameOver, gameMode = '2player', aiDifficul
             color: GAME_CONFIG.COLORS.TEXT,
             zIndex: 1000,
             borderRadius: '10px',
-            padding: '20px'
+            padding: '20px',
+            boxSizing: 'border-box'
           }}
         >
           <div style={{ 
@@ -869,7 +893,8 @@ const GameBoard = ({ onScoreUpdate, onGameOver, gameMode = '2player', aiDifficul
             fontWeight: 'bold',
             zIndex: 1000,
             borderRadius: '10px',
-            padding: '20px'
+            padding: '20px',
+            boxSizing: 'border-box'
           }}
         >
           <div style={{ marginBottom: '15px' }}>PAUSED</div>
