@@ -28,8 +28,9 @@ const ScoreBoard = ({ score1, score2, player1Name = 'Player 1', player2Name = 'P
           {score1}
         </div>
       </div>
-      <div style={{ textAlign: 'center', fontSize: '12px', opacity: 0.6, flex: 0, padding: '0 8px' }}>
-        VS
+      <div style={{ textAlign: 'center', fontSize: '12px', opacity: 0.6, flex: 0, padding: '0 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
+        <div>VS</div>
+        <div style={{ fontSize: '9px', opacity: 0.5 }}>First to {GAME_CONFIG.WIN_SCORE}</div>
       </div>
       <div style={{ textAlign: 'right', flex: 1 }}>
         <div style={{ fontSize: '11px', opacity: 0.8, marginBottom: '2px' }}>

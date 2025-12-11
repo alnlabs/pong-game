@@ -46,6 +46,12 @@ const Home = () => {
         <div className="home-menu">
           <button 
             className="home-menu-button"
+            onClick={() => navigate('/leaderboard')}
+          >
+            🏆 Leaderboard
+          </button>
+          <button 
+            className="home-menu-button"
             onClick={() => navigate('/help')}
           >
             📖 How to Play

@@ -7,6 +7,7 @@ import OnlineLobby from '../components/OnlineLobby';
 import Auth from '../components/Auth';
 import firebaseAuth from '../utils/firebaseAuth';
 import { GAME_CONFIG } from '../config/gameConfig';
+import { recordGameResult } from '../utils/leaderboard';
 import '../App.css';
 
 const Game = () => {
@@ -31,9 +32,67 @@ const Game = () => {
     setScore2(newScore2);
   };
 
+  const getPlayerNames = () => {
+    if (gameMode === 'ai') {
+      return {
+        player1: 'AI',
+        player2: 'You'
+      };
+    }
+    if (gameMode === 'online' && onlineConfig) {
+      return {
+        player1: onlineConfig.playerNumber === 1 ? 'You' : 'Opponent',
+        player2: onlineConfig.playerNumber === 2 ? 'You' : 'Opponent'
+      };
+    }
+    return {
+      player1: 'Player 1',
+      player2: 'Player 2'
+    };
+  };
+
   const handleGameOver = (winningPlayer) => {
     setGameOver(true);
     setWinner(winningPlayer);
+    
+    // Record game results to leaderboard
+    const playerNames = getPlayerNames();
+    const finalScore1 = score1;
+    const finalScore2 = score2;
+    
+    if (winningPlayer === 1) {
+      // Player 1 won
+      recordGameResult(
+        playerNames.player1,
+        true,
+        finalScore1,
+        playerNames.player2,
+        gameMode
+      );
+      recordGameResult(
+        playerNames.player2,
+        false,
+        finalScore2,
+        playerNames.player1,
+        gameMode
+      );
+    } else if (winningPlayer === 2) {
+      // Player 2 won
+      recordGameResult(
+        playerNames.player2,
+        true,
+        finalScore2,
+        playerNames.player1,
+        gameMode
+      );
+      recordGameResult(
+        playerNames.player1,
+        false,
+        finalScore1,
+        playerNames.player2,
+        gameMode
+      );
+    }
   };
 
   const handleRestart = () => {
@@ -78,9 +137,10 @@ const Game = () => {
   };
 
   const handleAuthCancel = () => {
-    setGameMode('2player');
     setShowOnlineLobby(false);
     setOnlineConfig(null);
+    // Navigate back to home to allow mode selection
+    navigate('/');
   };
 
   const handleOnlineGameStart = (config) => {
@@ -91,8 +151,9 @@ const Game = () => {
 
   const handleOnlineCancel = () => {
     setShowOnlineLobby(false);
-    setGameMode('2player');
     setOnlineConfig(null);
+    // Navigate back to home to allow mode selection
+    navigate('/');
   };
 
   const handleDifficultyChange = (difficulty) => {
@@ -100,25 +161,6 @@ const Game = () => {
     if (gameMode === 'ai') {
       handleRestart();
     }
-  };
-
-  const getPlayerNames = () => {
-    if (gameMode === 'ai') {
-      return {
-        player1: 'AI',
-        player2: 'You'
-      };
-    }
-    if (gameMode === 'online' && onlineConfig) {
-      return {
-        player1: onlineConfig.playerNumber === 1 ? 'You' : 'Opponent',
-        player2: onlineConfig.playerNumber === 2 ? 'You' : 'Opponent'
-      };
-    }
-    return {
-      player1: 'Player 1',
-      player2: 'Player 2'
-    };
   };
 
   const playerNames = getPlayerNames();
@@ -178,6 +220,28 @@ const Game = () => {
               player2Name={playerNames.player2}
             />
             
+            {/* Mode selector button for AI mode */}
+            {gameMode === 'ai' && (
+              <button
+                onClick={() => navigate('/')}
+                style={{
+                  width: '100%',
+                  padding: '6px',
+                  marginBottom: '6px',
+                  fontSize: '11px',
+                  backgroundColor: 'rgba(22, 33, 62, 0.6)',
+                  color: GAME_CONFIG.COLORS.TEXT,
+                  border: `1px solid ${GAME_CONFIG.COLORS.OBSTACLE}`,
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  opacity: 0.7,
+                  touchAction: 'manipulation'
+                }}
+              >
+                Change Game Mode
+              </button>
+            )}
+            
             {showOnlineLobby && user && (
               <OnlineLobby
                 onGameStart={handleOnlineGameStart}
@@ -201,6 +265,8 @@ const Game = () => {
                   onlineConfig={onlineConfig}
                   onScoreUpdate={handleScoreUpdate}
                   onGameOver={handleGameOver}
+                  player1Name={playerNames.player1}
+                  player2Name={playerNames.player2}
                 />
                 {gameOver && <GameOver winner={winner} onRestart={handleRestart} gameMode={gameMode} />}
               </div>

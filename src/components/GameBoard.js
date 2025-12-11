@@ -6,7 +6,7 @@ import firebaseMultiplayer from '../utils/firebaseMultiplayer';
 import { GAME_CONFIG } from '../config/gameConfig';
 import TouchControls from './TouchControls';
 
-const GameBoard = ({ onScoreUpdate, onGameOver, gameMode = '2player', aiDifficulty = 'medium', onlineConfig = null }) => {
+const GameBoard = ({ onScoreUpdate, onGameOver, gameMode = '2player', aiDifficulty = 'medium', onlineConfig = null, player1Name = 'Player 1', player2Name = 'Player 2' }) => {
   const canvasRef = useRef(null);
   const gameEngineRef = useRef(null);
   const aiControllerRef = useRef(null);
@@ -27,6 +27,7 @@ const GameBoard = ({ onScoreUpdate, onGameOver, gameMode = '2player', aiDifficul
   const obstacleDespawnTimersRef = useRef([]);
   const lastScoreRef = useRef({ score1: 0, score2: 0 });
   const startDynamicObstacleSystemRef = useRef(null);
+  const [pointScorer, setPointScorer] = useState(null); // Track who scored the last point
   
   // Initialize game engine immediately with default size
   useEffect(() => {
@@ -290,18 +291,19 @@ const GameBoard = ({ onScoreUpdate, onGameOver, gameMode = '2player', aiDifficul
   // Store function in ref to avoid circular dependency
   startDynamicObstacleSystemRef.current = startDynamicObstacleSystem;
 
-  // Initialize obstacles (scaled for mobile) - random each game
-  useEffect(() => {
-    if (canvasSize.width && canvasSize.height) {
-      // Start with ONLY permanent obstacles (creates suspense!)
-      const permanentObstacles = generateRandomObstacles(
-        canvasSize.width, 
-        canvasSize.height, 
-        GAME_CONFIG.PERMANENT_OBSTACLES,
-        true // Mark as permanent
-      );
-      obstaclesRef.current = permanentObstacles;
-      lastScoreRef.current = { score1: 0, score2: 0 };
+      // Initialize obstacles (scaled for mobile) - random each game
+      useEffect(() => {
+        if (canvasSize.width && canvasSize.height) {
+          // Start with ONLY permanent obstacles (creates suspense!)
+          const permanentObstacles = generateRandomObstacles(
+            canvasSize.width, 
+            canvasSize.height, 
+            GAME_CONFIG.PERMANENT_OBSTACLES,
+            true // Mark as permanent
+          );
+          obstaclesRef.current = permanentObstacles;
+          lastScoreRef.current = { score1: 0, score2: 0 };
+          setPointScorer(null); // Reset point scorer on game restart
       
       // Clear any existing timers
       if (obstacleSpawnTimerRef.current) {
@@ -683,9 +685,21 @@ const GameBoard = ({ onScoreUpdate, onGameOver, gameMode = '2player', aiDifficul
       });
     }
 
-    // Notify parent of score changes
+    // Notify parent of score changes and track who scored
     if (onScoreUpdate) {
-      onScoreUpdate(updatedState.score1, updatedState.score2);
+      const prevScore1 = lastScoreRef.current.score1;
+      const prevScore2 = lastScoreRef.current.score2;
+      
+      if (updatedState.score1 !== prevScore1 || updatedState.score2 !== prevScore2) {
+        // Determine who scored
+        if (updatedState.score1 > prevScore1) {
+          setPointScorer(1); // Player 1 scored
+        } else if (updatedState.score2 > prevScore2) {
+          setPointScorer(2); // Player 2 scored
+        }
+        onScoreUpdate(updatedState.score1, updatedState.score2);
+        lastScoreRef.current = { score1: updatedState.score1, score2: updatedState.score2 };
+      }
     }
 
     // Sync score in online mode (host sends updates)
@@ -808,8 +822,81 @@ const GameBoard = ({ onScoreUpdate, onGameOver, gameMode = '2player', aiDifficul
           }}
         />
 
-      {/* Start screen overlay */}
-      {state.gameState === 'ready' && (
+      {/* Point notification overlay */}
+      {state.gameState === 'ready' && pointScorer && (
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: `${canvasSize.width}px`,
+            height: `${canvasSize.height}px`,
+            backgroundColor: 'rgba(0, 0, 0, 0.85)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: GAME_CONFIG.COLORS.TEXT,
+            zIndex: 1000,
+            borderRadius: '10px',
+            padding: '20px',
+            boxSizing: 'border-box'
+          }}
+        >
+          <div style={{ 
+            fontSize: '28px', 
+            fontWeight: 'bold', 
+            marginBottom: '10px',
+            textAlign: 'center',
+            color: GAME_CONFIG.COLORS.BALL,
+            padding: '0 10px'
+          }}>
+            {pointScorer === 1 ? player1Name : player2Name} Got a Point!
+          </div>
+          <div style={{ 
+            fontSize: '16px', 
+            marginBottom: '20px',
+            textAlign: 'center',
+            opacity: 0.8,
+            padding: '0 10px'
+          }}>
+            First to {GAME_CONFIG.WIN_SCORE} wins
+          </div>
+          <button
+            onClick={() => {
+              if (gameEngineRef.current) {
+                gameEngineRef.current.start();
+                setPointScorer(null);
+                setForceUpdate(prev => prev + 1); // Force re-render
+              }
+            }}
+            style={{
+              padding: '12px 30px',
+              fontSize: '18px',
+              fontWeight: 'bold',
+              backgroundColor: GAME_CONFIG.COLORS.BALL,
+              color: GAME_CONFIG.COLORS.TEXT,
+              border: 'none',
+              borderRadius: '10px',
+              cursor: 'pointer',
+              boxShadow: `0 0 20px ${GAME_CONFIG.COLORS.BALL}`,
+              transition: 'transform 0.2s',
+              touchAction: 'manipulation'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.transform = 'scale(1.05)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.transform = 'scale(1)';
+            }}
+          >
+            Continue Playing
+          </button>
+        </div>
+      )}
+
+      {/* Initial start screen overlay (only when no point has been scored yet) */}
+      {state.gameState === 'ready' && !pointScorer && (
         <div
           style={{
             position: 'absolute',
@@ -832,11 +919,20 @@ const GameBoard = ({ onScoreUpdate, onGameOver, gameMode = '2player', aiDifficul
           <div style={{ 
             fontSize: '24px', 
             fontWeight: 'bold', 
-            marginBottom: '15px',
+            marginBottom: '10px',
             textAlign: 'center',
             padding: '0 10px'
           }}>
             Ready to Play?
+          </div>
+          <div style={{ 
+            fontSize: '14px', 
+            marginBottom: '20px',
+            textAlign: 'center',
+            opacity: 0.7,
+            padding: '0 10px'
+          }}>
+            First to {GAME_CONFIG.WIN_SCORE} wins
           </div>
           <button
             onClick={() => {
