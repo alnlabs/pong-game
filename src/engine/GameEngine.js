@@ -269,17 +269,17 @@ export class GameEngine {
 
     // If ball falls into hole, determine who gets the point
     if (distance < radius - this.ball.size / 2) {
-      // Determine which player's side the hole is closer to
-      // If hole is in upper half, player 2 (bottom) gets point
-      // If hole is in lower half, player 1 (top) gets point
-      const holeY = hole.y;
+      // Award point to the opponent of the player whose side the ball was on
+      // If ball is in upper half (player 1's side), player 2 gets the point
+      // If ball is in lower half (player 2's side), player 1 gets the point
+      const ballY = this.ball.y;
       const midY = this.canvasHeight / 2;
       
-      if (holeY < midY) {
-        // Hole in upper half - player 2 (bottom) gets point
+      if (ballY < midY) {
+        // Ball in upper half (player 1's side) - player 2 (bottom) gets point
         this.score2++;
       } else {
-        // Hole in lower half - player 1 (top) gets point
+        // Ball in lower half (player 2's side) - player 1 (top) gets point
         this.score1++;
       }
       

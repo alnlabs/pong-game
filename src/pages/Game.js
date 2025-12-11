@@ -14,6 +14,7 @@ const Game = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const initialMode = searchParams.get('mode') || '2player';
+  const initialDifficulty = searchParams.get('difficulty') || 'medium';
   
   const [score1, setScore1] = useState(0);
   const [score2, setScore2] = useState(0);
@@ -21,7 +22,7 @@ const Game = () => {
   const [winner, setWinner] = useState(null);
   const [gameKey, setGameKey] = useState(0);
   const [gameMode, setGameMode] = useState(initialMode);
-  const [aiDifficulty, setAiDifficulty] = useState('medium');
+  const [aiDifficulty, setAiDifficulty] = useState(initialDifficulty);
   const [showOnlineLobby, setShowOnlineLobby] = useState(false);
   const [onlineConfig, setOnlineConfig] = useState(null);
   const [user, setUser] = useState(null);

@@ -14,7 +14,13 @@ const Home = () => {
 
   const handleSelectMode = (mode) => {
     setShowModal(false);
-    navigate(`/game?mode=${mode}`);
+    // Mode can include difficulty parameter for AI mode (e.g., "ai?difficulty=hard")
+    if (mode.includes('?')) {
+      const [modeName, params] = mode.split('?');
+      navigate(`/game?mode=${modeName}&${params}`);
+    } else {
+      navigate(`/game?mode=${mode}`);
+    }
   };
 
   const handleCloseModal = () => {
