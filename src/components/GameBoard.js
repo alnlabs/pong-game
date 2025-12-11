@@ -731,7 +731,8 @@ const GameBoard = ({ onScoreUpdate, onGameOver, gameMode = '2player', aiDifficul
             borderRadius: '10px',
             boxShadow: '0 0 30px rgba(0, 0, 0, 0.5)',
             maxWidth: '100%',
-            height: 'auto'
+            height: 'auto',
+            touchAction: 'none' // Prevent default touch behaviors on canvas
           }}
         />
 
@@ -751,10 +752,17 @@ const GameBoard = ({ onScoreUpdate, onGameOver, gameMode = '2player', aiDifficul
             justifyContent: 'center',
             color: GAME_CONFIG.COLORS.TEXT,
             zIndex: 1000,
-            borderRadius: '10px'
+            borderRadius: '10px',
+            padding: window.innerWidth < 768 ? '20px' : '0'
           }}
         >
-          <div style={{ fontSize: '36px', fontWeight: 'bold', marginBottom: '20px' }}>
+          <div style={{ 
+            fontSize: window.innerWidth < 768 ? '24px' : '36px', 
+            fontWeight: 'bold', 
+            marginBottom: window.innerWidth < 768 ? '15px' : '20px',
+            textAlign: 'center',
+            padding: window.innerWidth < 768 ? '0 10px' : '0'
+          }}>
             Ready to Play?
           </div>
           <button
@@ -765,8 +773,8 @@ const GameBoard = ({ onScoreUpdate, onGameOver, gameMode = '2player', aiDifficul
               }
             }}
             style={{
-              padding: '15px 40px',
-              fontSize: '24px',
+              padding: window.innerWidth < 768 ? '12px 25px' : '15px 40px',
+              fontSize: window.innerWidth < 768 ? '18px' : '24px',
               fontWeight: 'bold',
               backgroundColor: GAME_CONFIG.COLORS.BALL,
               color: GAME_CONFIG.COLORS.TEXT,
@@ -775,17 +783,28 @@ const GameBoard = ({ onScoreUpdate, onGameOver, gameMode = '2player', aiDifficul
               cursor: 'pointer',
               boxShadow: `0 0 20px ${GAME_CONFIG.COLORS.BALL}`,
               transition: 'transform 0.2s',
+              touchAction: 'manipulation'
             }}
             onMouseEnter={(e) => {
-              e.target.style.transform = 'scale(1.1)';
+              if (window.innerWidth >= 768) {
+                e.target.style.transform = 'scale(1.1)';
+              }
             }}
             onMouseLeave={(e) => {
-              e.target.style.transform = 'scale(1)';
+              if (window.innerWidth >= 768) {
+                e.target.style.transform = 'scale(1)';
+              }
             }}
           >
             START GAME
           </button>
-          <div style={{ marginTop: '20px', fontSize: '14px', opacity: 0.7 }}>
+          <div style={{ 
+            marginTop: window.innerWidth < 768 ? '15px' : '20px', 
+            fontSize: window.innerWidth < 768 ? '12px' : '14px', 
+            opacity: 0.7,
+            textAlign: 'center',
+            padding: window.innerWidth < 768 ? '0 10px' : '0'
+          }}>
             Press Space or Esc to pause during game
           </div>
         </div>
@@ -806,13 +825,14 @@ const GameBoard = ({ onScoreUpdate, onGameOver, gameMode = '2player', aiDifficul
             alignItems: 'center',
             justifyContent: 'center',
             color: GAME_CONFIG.COLORS.TEXT,
-            fontSize: '32px',
+            fontSize: window.innerWidth < 768 ? '24px' : '32px',
             fontWeight: 'bold',
             zIndex: 1000,
-            borderRadius: '10px'
+            borderRadius: '10px',
+            padding: window.innerWidth < 768 ? '20px' : '0'
           }}
         >
-          <div style={{ marginBottom: '20px' }}>PAUSED</div>
+          <div style={{ marginBottom: window.innerWidth < 768 ? '15px' : '20px' }}>PAUSED</div>
           <button
             onClick={() => {
               if (gameEngineRef.current) {
@@ -820,13 +840,14 @@ const GameBoard = ({ onScoreUpdate, onGameOver, gameMode = '2player', aiDifficul
               }
             }}
             style={{
-              padding: '10px 30px',
-              fontSize: '18px',
+              padding: window.innerWidth < 768 ? '10px 25px' : '10px 30px',
+              fontSize: window.innerWidth < 768 ? '16px' : '18px',
               backgroundColor: GAME_CONFIG.COLORS.BALL,
               color: GAME_CONFIG.COLORS.TEXT,
               border: 'none',
               borderRadius: '8px',
-              cursor: 'pointer'
+              cursor: 'pointer',
+              touchAction: 'manipulation'
             }}
           >
             RESUME

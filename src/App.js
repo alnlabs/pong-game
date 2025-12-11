@@ -154,13 +154,14 @@ function App() {
         {user && gameMode === 'online' && (
           <div
             style={{
-              width: GAME_CONFIG.CANVAS_WIDTH,
-              padding: '10px',
-              marginBottom: '10px',
+              width: window.innerWidth < 768 ? '100%' : GAME_CONFIG.CANVAS_WIDTH,
+              maxWidth: '100%',
+              padding: window.innerWidth < 768 ? '8px' : '10px',
+              marginBottom: window.innerWidth < 768 ? '8px' : '10px',
               backgroundColor: GAME_CONFIG.COLORS.OBSTACLE,
               borderRadius: '8px',
               color: GAME_CONFIG.COLORS.TEXT,
-              fontSize: '12px',
+              fontSize: window.innerWidth < 768 ? '11px' : '12px',
               textAlign: 'center'
             }}
           >
@@ -175,14 +176,15 @@ function App() {
                 }
               }}
               style={{
-                marginLeft: '10px',
-                padding: '5px 10px',
-                fontSize: '12px',
+                marginLeft: window.innerWidth < 768 ? '8px' : '10px',
+                padding: window.innerWidth < 768 ? '4px 8px' : '5px 10px',
+                fontSize: window.innerWidth < 768 ? '11px' : '12px',
                 backgroundColor: 'transparent',
                 color: GAME_CONFIG.COLORS.BALL,
                 border: `1px solid ${GAME_CONFIG.COLORS.BALL}`,
                 borderRadius: '5px',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                touchAction: 'manipulation'
               }}
             >
               Sign Out

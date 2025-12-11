@@ -29,6 +29,11 @@ const TouchControls = ({ onMovePlayer1, onMovePlayer2, playerNumber, gameMode })
   const showPlayer1Controls = gameMode === '2player' || (gameMode === 'online' && playerNumber === 1);
   const showPlayer2Controls = gameMode === '2player' || gameMode === 'ai' || (gameMode === 'online' && playerNumber === 2);
 
+  const buttonSize = window.innerWidth < 480 ? '60px' : '70px';
+  const buttonFontSize = window.innerWidth < 480 ? '24px' : '28px';
+  const bottomPadding = window.innerWidth < 480 ? '15px' : '20px';
+  const safeAreaBottom = `max(${bottomPadding}, env(safe-area-inset-bottom))`;
+  
   return (
     <div
       style={{
@@ -38,7 +43,7 @@ const TouchControls = ({ onMovePlayer1, onMovePlayer2, playerNumber, gameMode })
         right: 0,
         display: 'flex',
         justifyContent: 'space-around',
-        padding: '20px',
+        padding: `${bottomPadding} ${bottomPadding} ${safeAreaBottom} ${bottomPadding}`,
         zIndex: 100,
         pointerEvents: 'none'
       }}
@@ -48,7 +53,7 @@ const TouchControls = ({ onMovePlayer1, onMovePlayer2, playerNumber, gameMode })
         <div
           style={{
             display: 'flex',
-            gap: '15px',
+            gap: window.innerWidth < 480 ? '12px' : '15px',
             pointerEvents: 'auto'
           }}
         >
@@ -65,13 +70,13 @@ const TouchControls = ({ onMovePlayer1, onMovePlayer2, playerNumber, gameMode })
             onMouseUp={() => handleTouchEnd(2)}
             onMouseLeave={() => handleTouchEnd(2)}
             style={{
-              width: '80px',
-              height: '80px',
+              width: buttonSize,
+              height: buttonSize,
               borderRadius: '50%',
               backgroundColor: GAME_CONFIG.COLORS.PADDLE,
               border: `3px solid ${GAME_CONFIG.COLORS.BALL}`,
               color: GAME_CONFIG.COLORS.TEXT,
-              fontSize: '32px',
+              fontSize: buttonFontSize,
               fontWeight: 'bold',
               cursor: 'pointer',
               userSelect: 'none',
@@ -79,7 +84,8 @@ const TouchControls = ({ onMovePlayer1, onMovePlayer2, playerNumber, gameMode })
               boxShadow: `0 4px 15px rgba(0, 0, 0, 0.3)`,
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center'
+              justifyContent: 'center',
+              WebkitTapHighlightColor: 'transparent'
             }}
           >
             ←
@@ -97,13 +103,13 @@ const TouchControls = ({ onMovePlayer1, onMovePlayer2, playerNumber, gameMode })
             onMouseUp={() => handleTouchEnd(2)}
             onMouseLeave={() => handleTouchEnd(2)}
             style={{
-              width: '80px',
-              height: '80px',
+              width: buttonSize,
+              height: buttonSize,
               borderRadius: '50%',
               backgroundColor: GAME_CONFIG.COLORS.PADDLE,
               border: `3px solid ${GAME_CONFIG.COLORS.BALL}`,
               color: GAME_CONFIG.COLORS.TEXT,
-              fontSize: '32px',
+              fontSize: buttonFontSize,
               fontWeight: 'bold',
               cursor: 'pointer',
               userSelect: 'none',
@@ -111,7 +117,8 @@ const TouchControls = ({ onMovePlayer1, onMovePlayer2, playerNumber, gameMode })
               boxShadow: `0 4px 15px rgba(0, 0, 0, 0.3)`,
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center'
+              justifyContent: 'center',
+              WebkitTapHighlightColor: 'transparent'
             }}
           >
             →
@@ -124,12 +131,13 @@ const TouchControls = ({ onMovePlayer1, onMovePlayer2, playerNumber, gameMode })
         <div
           style={{
             position: 'fixed',
-            top: '100px',
+            top: window.innerWidth < 480 ? '80px' : '100px',
             left: 0,
             right: 0,
             display: 'flex',
             justifyContent: 'space-around',
-            padding: '20px',
+            padding: `${window.innerWidth < 480 ? '15px' : '20px'} ${bottomPadding} ${bottomPadding} ${bottomPadding}`,
+            paddingTop: `max(${window.innerWidth < 480 ? '15px' : '20px'}, env(safe-area-inset-top))`,
             zIndex: 100,
             pointerEvents: 'auto'
           }}
@@ -137,7 +145,7 @@ const TouchControls = ({ onMovePlayer1, onMovePlayer2, playerNumber, gameMode })
           <div
             style={{
               display: 'flex',
-              gap: '15px'
+              gap: window.innerWidth < 480 ? '12px' : '15px'
             }}
           >
             <button
@@ -153,13 +161,13 @@ const TouchControls = ({ onMovePlayer1, onMovePlayer2, playerNumber, gameMode })
               onMouseUp={() => handleTouchEnd(1)}
               onMouseLeave={() => handleTouchEnd(1)}
               style={{
-                width: '80px',
-                height: '80px',
+                width: buttonSize,
+                height: buttonSize,
                 borderRadius: '50%',
                 backgroundColor: GAME_CONFIG.COLORS.PADDLE,
                 border: `3px solid ${GAME_CONFIG.COLORS.BALL}`,
                 color: GAME_CONFIG.COLORS.TEXT,
-                fontSize: '32px',
+                fontSize: buttonFontSize,
                 fontWeight: 'bold',
                 cursor: 'pointer',
                 userSelect: 'none',
@@ -167,7 +175,8 @@ const TouchControls = ({ onMovePlayer1, onMovePlayer2, playerNumber, gameMode })
                 boxShadow: `0 4px 15px rgba(0, 0, 0, 0.3)`,
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center'
+                justifyContent: 'center',
+                WebkitTapHighlightColor: 'transparent'
               }}
             >
               ←
@@ -179,19 +188,19 @@ const TouchControls = ({ onMovePlayer1, onMovePlayer2, playerNumber, gameMode })
               }}
               onTouchEnd={(e) => {
                 e.preventDefault();
-                handleTouchEnd();
+                handleTouchEnd(1);
               }}
               onMouseDown={() => handleTouchStart(1, 1)}
-              onMouseUp={handleTouchEnd}
-              onMouseLeave={handleTouchEnd}
+              onMouseUp={() => handleTouchEnd(1)}
+              onMouseLeave={() => handleTouchEnd(1)}
               style={{
-                width: '80px',
-                height: '80px',
+                width: buttonSize,
+                height: buttonSize,
                 borderRadius: '50%',
                 backgroundColor: GAME_CONFIG.COLORS.PADDLE,
                 border: `3px solid ${GAME_CONFIG.COLORS.BALL}`,
                 color: GAME_CONFIG.COLORS.TEXT,
-                fontSize: '32px',
+                fontSize: buttonFontSize,
                 fontWeight: 'bold',
                 cursor: 'pointer',
                 userSelect: 'none',
@@ -199,7 +208,8 @@ const TouchControls = ({ onMovePlayer1, onMovePlayer2, playerNumber, gameMode })
                 boxShadow: `0 4px 15px rgba(0, 0, 0, 0.3)`,
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center'
+                justifyContent: 'center',
+                WebkitTapHighlightColor: 'transparent'
               }}
             >
               →
