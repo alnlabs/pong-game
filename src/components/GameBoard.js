@@ -26,6 +26,7 @@ const GameBoard = ({ onScoreUpdate, onGameOver, gameMode = '2player', aiDifficul
   const obstacleSpawnTimerRef = useRef(null);
   const obstacleDespawnTimersRef = useRef([]);
   const lastScoreRef = useRef({ score1: 0, score2: 0 });
+  const startDynamicObstacleSystemRef = useRef(null);
   
   // Initialize game engine immediately with default size
   useEffect(() => {
@@ -138,43 +139,6 @@ const GameBoard = ({ onScoreUpdate, onGameOver, gameMode = '2player', aiDifficul
     return obstacles;
   }, []);
 
-  // Initialize obstacles (scaled for mobile) - random each game
-  useEffect(() => {
-    if (canvasSize.width && canvasSize.height) {
-      // Start with ONLY permanent obstacles (creates suspense!)
-      const permanentObstacles = generateRandomObstacles(
-        canvasSize.width, 
-        canvasSize.height, 
-        GAME_CONFIG.PERMANENT_OBSTACLES,
-        true // Mark as permanent
-      );
-      obstaclesRef.current = permanentObstacles;
-      lastScoreRef.current = { score1: 0, score2: 0 };
-      
-      // Clear any existing timers
-      if (obstacleSpawnTimerRef.current) {
-        clearInterval(obstacleSpawnTimerRef.current);
-      }
-      obstacleDespawnTimersRef.current.forEach(timer => clearTimeout(timer));
-      obstacleDespawnTimersRef.current = [];
-      
-      // Start dynamic obstacle system if enabled (with initial delay for suspense)
-      if (GAME_CONFIG.DYNAMIC_OBSTACLES && GAME_CONFIG.TEMPORARY_OBSTACLES) {
-        setTimeout(() => {
-          startDynamicObstacleSystem();
-        }, GAME_CONFIG.INITIAL_DELAY);
-      }
-    }
-    
-    return () => {
-      if (obstacleSpawnTimerRef.current) {
-        clearInterval(obstacleSpawnTimerRef.current);
-      }
-      obstacleDespawnTimersRef.current.forEach(timer => clearTimeout(timer));
-      obstacleDespawnTimersRef.current = [];
-    };
-  }, [canvasSize, generateRandomObstacles, startDynamicObstacleSystem]); // Regenerate on game restart
-
   // Spawn a single random obstacle
   const spawnRandomObstacle = useCallback(() => {
     if (!canvasSize.width || !canvasSize.height) return;
@@ -256,6 +220,49 @@ const GameBoard = ({ onScoreUpdate, onGameOver, gameMode = '2player', aiDifficul
       }
     }, GAME_CONFIG.OBSTACLE_SPAWN_INTERVAL);
   }, [spawnRandomObstacle]);
+  
+  // Store function in ref to avoid circular dependency
+  startDynamicObstacleSystemRef.current = startDynamicObstacleSystem;
+
+  // Initialize obstacles (scaled for mobile) - random each game
+  useEffect(() => {
+    if (canvasSize.width && canvasSize.height) {
+      // Start with ONLY permanent obstacles (creates suspense!)
+      const permanentObstacles = generateRandomObstacles(
+        canvasSize.width, 
+        canvasSize.height, 
+        GAME_CONFIG.PERMANENT_OBSTACLES,
+        true // Mark as permanent
+      );
+      obstaclesRef.current = permanentObstacles;
+      lastScoreRef.current = { score1: 0, score2: 0 };
+      
+      // Clear any existing timers
+      if (obstacleSpawnTimerRef.current) {
+        clearInterval(obstacleSpawnTimerRef.current);
+      }
+      obstacleDespawnTimersRef.current.forEach(timer => clearTimeout(timer));
+      obstacleDespawnTimersRef.current = [];
+      
+      // Start dynamic obstacle system if enabled (with initial delay for suspense)
+      if (GAME_CONFIG.DYNAMIC_OBSTACLES && GAME_CONFIG.TEMPORARY_OBSTACLES) {
+        const timerId = setTimeout(() => {
+          if (startDynamicObstacleSystemRef.current) {
+            startDynamicObstacleSystemRef.current();
+          }
+        }, GAME_CONFIG.INITIAL_DELAY);
+        return () => clearTimeout(timerId);
+      }
+    }
+    
+    return () => {
+      if (obstacleSpawnTimerRef.current) {
+        clearInterval(obstacleSpawnTimerRef.current);
+      }
+      obstacleDespawnTimersRef.current.forEach(timer => clearTimeout(timer));
+      obstacleDespawnTimersRef.current = [];
+    };
+  }, [canvasSize, generateRandomObstacles]); // Regenerate on game restart
 
   // Spawn obstacle on score change (with delay for suspense)
   useEffect(() => {
