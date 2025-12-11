@@ -3,8 +3,6 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import GameBoard from '../components/GameBoard';
 import ScoreBoard from '../components/ScoreBoard';
 import GameOver from '../components/GameOver';
-import Instructions from '../components/Instructions';
-import ModeSelector from '../components/ModeSelector';
 import OnlineLobby from '../components/OnlineLobby';
 import Auth from '../components/Auth';
 import firebaseAuth from '../utils/firebaseAuth';
@@ -27,7 +25,6 @@ const Game = () => {
   const [onlineConfig, setOnlineConfig] = useState(null);
   const [user, setUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
-  const [showModeSelector, setShowModeSelector] = useState(true);
 
   const handleScoreUpdate = (newScore1, newScore2) => {
     setScore1(newScore1);
@@ -148,15 +145,16 @@ const Game = () => {
           width: '100%', 
           display: 'flex', 
           justifyContent: 'flex-end',
-          marginBottom: '8px',
+          marginBottom: '6px',
           padding: '0 10px',
-          boxSizing: 'border-box'
+          boxSizing: 'border-box',
+          flexShrink: 0
         }}>
           <button
             onClick={() => navigate('/')}
             style={{
-              padding: '6px 12px',
-              fontSize: '12px',
+              padding: '5px 10px',
+              fontSize: '11px',
               backgroundColor: 'rgba(22, 33, 62, 0.8)',
               color: GAME_CONFIG.COLORS.TEXT,
               border: `2px solid ${GAME_CONFIG.COLORS.BALL}`,
@@ -173,63 +171,6 @@ const Game = () => {
         
         {!showAuth && (
           <>
-            {/* Mode selector - only show when toggled or before game starts */}
-            {showModeSelector && (
-              <div style={{ marginBottom: '8px' }}>
-                <div style={{ 
-                  display: 'flex', 
-                  justifyContent: 'space-between', 
-                  alignItems: 'center',
-                  marginBottom: '5px',
-                  padding: '0 5px'
-                }}>
-                  <span style={{ fontSize: '12px', color: GAME_CONFIG.COLORS.TEXT, opacity: 0.8 }}>
-                    Game Mode
-                  </span>
-                  <button
-                    onClick={() => setShowModeSelector(false)}
-                    style={{
-                      padding: '2px 8px',
-                      fontSize: '10px',
-                      backgroundColor: 'transparent',
-                      color: GAME_CONFIG.COLORS.TEXT,
-                      border: `1px solid ${GAME_CONFIG.COLORS.TEXT}`,
-                      borderRadius: '4px',
-                      cursor: 'pointer',
-                      opacity: 0.6
-                    }}
-                  >
-                    Hide
-                  </button>
-                </div>
-                <ModeSelector
-                  gameMode={gameMode}
-                  onModeChange={handleModeChange}
-                  aiDifficulty={aiDifficulty}
-                  onDifficultyChange={handleDifficultyChange}
-                />
-              </div>
-            )}
-            {!showModeSelector && (
-              <button
-                onClick={() => setShowModeSelector(true)}
-                style={{
-                  width: '100%',
-                  padding: '6px',
-                  marginBottom: '8px',
-                  fontSize: '11px',
-                  backgroundColor: 'rgba(22, 33, 62, 0.6)',
-                  color: GAME_CONFIG.COLORS.TEXT,
-                  border: `1px solid ${GAME_CONFIG.COLORS.OBSTACLE}`,
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  opacity: 0.7
-                }}
-              >
-                Show Game Mode
-              </button>
-            )}
-            
             <ScoreBoard 
               score1={score1} 
               score2={score2}

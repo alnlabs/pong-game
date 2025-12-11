@@ -1,10 +1,25 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { GAME_CONFIG } from '../config/gameConfig';
+import GameModeModal from '../components/GameModeModal';
 import './Home.css';
 
 const Home = () => {
   const navigate = useNavigate();
+  const [showModal, setShowModal] = useState(false);
+
+  const handlePlayNow = () => {
+    setShowModal(true);
+  };
+
+  const handleSelectMode = (mode) => {
+    setShowModal(false);
+    navigate(`/game?mode=${mode}`);
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+  };
 
   return (
     <div className="home-page">
@@ -15,11 +30,18 @@ const Home = () => {
         <div className="home-buttons">
           <button 
             className="home-button primary"
-            onClick={() => navigate('/game')}
+            onClick={handlePlayNow}
           >
             Play Now
           </button>
         </div>
+
+        {showModal && (
+          <GameModeModal
+            onClose={handleCloseModal}
+            onSelectMode={handleSelectMode}
+          />
+        )}
 
         <div className="home-menu">
           <button 

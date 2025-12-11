@@ -29,7 +29,9 @@ body {
   -moz-osx-font-smoothing: grayscale;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   min-height: 100vh;
-  overflow-y: auto;
+  height: 100vh;
+  max-height: 100vh;
+  overflow-y: hidden;
   overflow-x: hidden;
   touch-action: manipulation;
   -webkit-user-select: none;
@@ -44,13 +46,17 @@ body {
   align-items: flex-start;
   justify-content: center;
   min-height: 100vh;
+  height: 100vh;
+  max-height: 100vh;
   width: 100%;
+  overflow: hidden;
   /* Mobile-first padding */
   padding: 8px;
   padding-top: max(8px, env(safe-area-inset-top));
   padding-bottom: max(8px, env(safe-area-inset-bottom));
   padding-left: max(8px, env(safe-area-inset-left));
   padding-right: max(8px, env(safe-area-inset-right));
+  box-sizing: border-box;
 }
 
 .game-container {
@@ -60,7 +66,9 @@ body {
   justify-content: flex-start;
   width: 100%;
   max-width: 100%;
+  max-height: 100%;
   overflow-x: hidden;
+  overflow-y: hidden;
   box-sizing: border-box;
 }
 

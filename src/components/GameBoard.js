@@ -49,16 +49,47 @@ const GameBoard = ({ onScoreUpdate, onGameOver, gameMode = '2player', aiDifficul
   }, [gameMode, aiDifficulty]); // Re-run when mode or difficulty changes
 
   // Calculate responsive canvas size - mobile-first, scales proportionally
+  // Accounts for all UI elements to fit without scrolling
   useEffect(() => {
     const updateCanvasSize = () => {
-      // Mobile-first: start with mobile sizing, scale up proportionally
-      const padding = 24; // Account for padding and safe areas
-      const maxWidth = window.innerWidth - padding;
+      const viewportHeight = window.innerHeight;
+      const viewportWidth = window.innerWidth;
+      
+      // Account for UI elements:
+      // - App padding: ~16px top/bottom
+      // - Home button header: ~26px
+      // - ScoreBoard: ~46px (compact)
+      // - Bottom padding: ~16px
+      const uiHeight = 16 + 26 + 46 + 16; // Total UI height (~104px)
+      
+      // Account for safe areas (try to get them, fallback to 0)
+      let safeAreaTop = 0;
+      let safeAreaBottom = 0;
+      try {
+        const style = window.getComputedStyle(document.documentElement);
+        safeAreaTop = parseInt(style.getPropertyValue('env(safe-area-inset-top)')) || 0;
+        safeAreaBottom = parseInt(style.getPropertyValue('env(safe-area-inset-bottom)')) || 0;
+      } catch (e) {
+        // Fallback if env() not supported
+      }
+      
+      const availableHeight = viewportHeight - uiHeight - safeAreaTop - safeAreaBottom;
+      
+      // Account for horizontal padding
+      const horizontalPadding = 24;
+      const availableWidth = viewportWidth - horizontalPadding;
+      
       const aspectRatio = GAME_CONFIG.CANVAS_HEIGHT / GAME_CONFIG.CANVAS_WIDTH;
-      // Use mobile-first approach: scale from mobile size up, but cap at original canvas size
-      const baseMobileWidth = Math.min(350, maxWidth); // Base mobile width
-      const width = Math.min(maxWidth, Math.max(baseMobileWidth, Math.min(GAME_CONFIG.CANVAS_WIDTH, maxWidth)));
+      
+      // Calculate max width and height based on available space
+      const maxWidthFromHeight = availableHeight / aspectRatio;
+      const maxWidth = Math.min(availableWidth, maxWidthFromHeight);
+      
+      // Ensure minimum size for playability
+      const minWidth = 280;
+      const width = Math.max(minWidth, Math.min(maxWidth, GAME_CONFIG.CANVAS_WIDTH));
       const height = width * aspectRatio;
+      
       setCanvasSize({ width, height });
     };
 
@@ -730,7 +761,9 @@ const GameBoard = ({ onScoreUpdate, onGameOver, gameMode = '2player', aiDifficul
         display: 'inline-block',
         width: '100%',
         maxWidth: '100%',
-        boxSizing: 'border-box'
+        boxSizing: 'border-box',
+        flexShrink: 1,
+        minHeight: 0
       }}>
         <canvas
           ref={canvasRef}
