@@ -2,42 +2,41 @@ import React from 'react';
 import { GAME_CONFIG } from '../config/gameConfig';
 
 const ModeSelector = ({ gameMode, onModeChange, aiDifficulty, onDifficultyChange }) => {
-  const isMobile = window.innerWidth < 768;
-  
   return (
     <div
       style={{
-        width: isMobile ? '100%' : GAME_CONFIG.CANVAS_WIDTH,
+        width: '100%',
         maxWidth: '100%',
-        padding: isMobile ? '15px' : '20px',
+        padding: '15px',
         backgroundColor: GAME_CONFIG.COLORS.BACKGROUND,
         borderRadius: '10px',
-        marginBottom: isMobile ? '10px' : '20px',
+        marginBottom: '10px',
         display: 'flex',
         flexDirection: 'column',
-        gap: isMobile ? '10px' : '15px'
+        gap: '10px',
+        boxSizing: 'border-box'
       }}
     >
       <div
         style={{
           color: GAME_CONFIG.COLORS.TEXT,
-          fontSize: isMobile ? '16px' : '18px',
+          fontSize: '16px',
           fontWeight: 'bold',
-          marginBottom: isMobile ? '8px' : '10px',
-          textAlign: isMobile ? 'center' : 'left'
+          marginBottom: '8px',
+          textAlign: 'center'
         }}
       >
         Game Mode:
       </div>
       
-      <div style={{ display: 'flex', gap: isMobile ? '8px' : '10px', flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
         <button
           onClick={() => onModeChange('2player')}
           style={{
             flex: 1,
-            minWidth: isMobile ? '90px' : '120px',
-            padding: isMobile ? '10px 12px' : '12px 20px',
-            fontSize: isMobile ? '14px' : '16px',
+            minWidth: '90px',
+            padding: '10px 12px',
+            fontSize: '14px',
             fontWeight: 'bold',
             backgroundColor: gameMode === '2player' 
               ? GAME_CONFIG.COLORS.BALL 
@@ -71,9 +70,9 @@ const ModeSelector = ({ gameMode, onModeChange, aiDifficulty, onDifficultyChange
           onClick={() => onModeChange('ai')}
           style={{
             flex: 1,
-            minWidth: isMobile ? '90px' : '120px',
-            padding: isMobile ? '10px 12px' : '12px 20px',
-            fontSize: isMobile ? '14px' : '16px',
+            minWidth: '90px',
+            padding: '10px 12px',
+            fontSize: '14px',
             fontWeight: 'bold',
             backgroundColor: gameMode === 'ai' 
               ? GAME_CONFIG.COLORS.BALL 
@@ -107,9 +106,9 @@ const ModeSelector = ({ gameMode, onModeChange, aiDifficulty, onDifficultyChange
           onClick={() => onModeChange('online')}
           style={{
             flex: 1,
-            minWidth: isMobile ? '90px' : '120px',
-            padding: isMobile ? '10px 12px' : '12px 20px',
-            fontSize: isMobile ? '14px' : '16px',
+            minWidth: '90px',
+            padding: '10px 12px',
+            fontSize: '14px',
             fontWeight: 'bold',
             backgroundColor: gameMode === 'online' 
               ? GAME_CONFIG.COLORS.BALL 
@@ -143,8 +142,8 @@ const ModeSelector = ({ gameMode, onModeChange, aiDifficulty, onDifficultyChange
       {gameMode === 'ai' && (
         <div
           style={{
-            marginTop: isMobile ? '8px' : '10px',
-            padding: isMobile ? '12px' : '15px',
+            marginTop: '8px',
+            padding: '12px',
             backgroundColor: GAME_CONFIG.COLORS.OBSTACLE,
             borderRadius: '8px'
           }}
@@ -152,23 +151,23 @@ const ModeSelector = ({ gameMode, onModeChange, aiDifficulty, onDifficultyChange
           <div
             style={{
               color: GAME_CONFIG.COLORS.TEXT,
-              fontSize: isMobile ? '13px' : '14px',
+              fontSize: '13px',
               fontWeight: 'bold',
-              marginBottom: isMobile ? '8px' : '10px',
-              textAlign: isMobile ? 'center' : 'left'
+              marginBottom: '8px',
+              textAlign: 'center'
             }}
           >
             AI Difficulty:
           </div>
-          <div style={{ display: 'flex', gap: isMobile ? '6px' : '8px' }}>
+          <div style={{ display: 'flex', gap: '6px' }}>
             {['easy', 'medium', 'hard'].map((difficulty) => (
               <button
                 key={difficulty}
                 onClick={() => onDifficultyChange(difficulty)}
                 style={{
                   flex: 1,
-                  padding: isMobile ? '8px' : '10px',
-                  fontSize: isMobile ? '12px' : '14px',
+                  padding: '8px',
+                  fontSize: '12px',
                   fontWeight: 'bold',
                   backgroundColor: aiDifficulty === difficulty
                     ? GAME_CONFIG.COLORS.BALL

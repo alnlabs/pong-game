@@ -72,20 +72,19 @@ const Auth = ({ onAuthSuccess, onCancel }) => {
     }
     setLoading(false);
   };
-
-  const isMobile = window.innerWidth < 768;
   
   return (
     <div
       style={{
         width: '100%',
-        maxWidth: isMobile ? '100%' : GAME_CONFIG.CANVAS_WIDTH,
-        margin: isMobile ? '10px auto' : '20px auto',
+        maxWidth: '100%',
+        margin: '10px auto',
         backgroundColor: GAME_CONFIG.COLORS.BACKGROUND,
-        padding: isMobile ? '20px 15px' : '30px',
+        padding: '20px 15px',
         borderRadius: '20px',
         border: `3px solid ${GAME_CONFIG.COLORS.BALL}`,
-        boxShadow: `0 0 30px ${GAME_CONFIG.COLORS.BALL}`
+        boxShadow: `0 0 30px ${GAME_CONFIG.COLORS.BALL}`,
+        boxSizing: 'border-box'
       }}
     >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
@@ -113,7 +112,7 @@ const Auth = ({ onAuthSuccess, onCancel }) => {
             style={{
               color: GAME_CONFIG.COLORS.TEXT,
               textAlign: 'center',
-              fontSize: isMobile ? '22px' : '28px',
+              fontSize: '22px',
               margin: 0,
               flex: 1
             }}

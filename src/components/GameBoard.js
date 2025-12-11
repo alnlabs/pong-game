@@ -48,24 +48,27 @@ const GameBoard = ({ onScoreUpdate, onGameOver, gameMode = '2player', aiDifficul
     }
   }, [gameMode, aiDifficulty]); // Re-run when mode or difficulty changes
 
-  // Calculate responsive canvas size
+  // Calculate responsive canvas size - mobile-first, scales proportionally
   useEffect(() => {
     const updateCanvasSize = () => {
-      const isMobile = window.innerWidth < 768;
-      if (isMobile) {
-        const maxWidth = window.innerWidth - 40; // Account for padding
-        const aspectRatio = GAME_CONFIG.CANVAS_HEIGHT / GAME_CONFIG.CANVAS_WIDTH;
-        const width = Math.min(maxWidth, GAME_CONFIG.CANVAS_WIDTH);
-        const height = width * aspectRatio;
-        setCanvasSize({ width, height });
-      } else {
-        setCanvasSize({ width: GAME_CONFIG.CANVAS_WIDTH, height: GAME_CONFIG.CANVAS_HEIGHT });
-      }
+      // Mobile-first: start with mobile sizing, scale up proportionally
+      const padding = 24; // Account for padding and safe areas
+      const maxWidth = window.innerWidth - padding;
+      const aspectRatio = GAME_CONFIG.CANVAS_HEIGHT / GAME_CONFIG.CANVAS_WIDTH;
+      // Use mobile-first approach: scale from mobile size up, but cap at original canvas size
+      const baseMobileWidth = Math.min(350, maxWidth); // Base mobile width
+      const width = Math.min(maxWidth, Math.max(baseMobileWidth, Math.min(GAME_CONFIG.CANVAS_WIDTH, maxWidth)));
+      const height = width * aspectRatio;
+      setCanvasSize({ width, height });
     };
 
     updateCanvasSize();
     window.addEventListener('resize', updateCanvasSize);
-    return () => window.removeEventListener('resize', updateCanvasSize);
+    window.addEventListener('orientationchange', updateCanvasSize);
+    return () => {
+      window.removeEventListener('resize', updateCanvasSize);
+      window.removeEventListener('orientationchange', updateCanvasSize);
+    };
   }, []);
 
   // Generate random obstacles (scaled for mobile)
@@ -722,7 +725,13 @@ const GameBoard = ({ onScoreUpdate, onGameOver, gameMode = '2player', aiDifficul
 
   return (
     <>
-      <div style={{ position: 'relative', display: 'inline-block' }}>
+      <div style={{ 
+        position: 'relative', 
+        display: 'inline-block',
+        width: '100%',
+        maxWidth: '100%',
+        boxSizing: 'border-box'
+      }}>
         <canvas
           ref={canvasRef}
           style={{
@@ -731,8 +740,10 @@ const GameBoard = ({ onScoreUpdate, onGameOver, gameMode = '2player', aiDifficul
             borderRadius: '10px',
             boxShadow: '0 0 30px rgba(0, 0, 0, 0.5)',
             maxWidth: '100%',
+            width: '100%',
             height: 'auto',
-            touchAction: 'none' // Prevent default touch behaviors on canvas
+            touchAction: 'none', // Prevent default touch behaviors on canvas
+            boxSizing: 'border-box'
           }}
         />
 
@@ -753,15 +764,15 @@ const GameBoard = ({ onScoreUpdate, onGameOver, gameMode = '2player', aiDifficul
             color: GAME_CONFIG.COLORS.TEXT,
             zIndex: 1000,
             borderRadius: '10px',
-            padding: window.innerWidth < 768 ? '20px' : '0'
+            padding: '20px'
           }}
         >
           <div style={{ 
-            fontSize: window.innerWidth < 768 ? '24px' : '36px', 
+            fontSize: '24px', 
             fontWeight: 'bold', 
-            marginBottom: window.innerWidth < 768 ? '15px' : '20px',
+            marginBottom: '15px',
             textAlign: 'center',
-            padding: window.innerWidth < 768 ? '0 10px' : '0'
+            padding: '0 10px'
           }}>
             Ready to Play?
           </div>
@@ -773,8 +784,8 @@ const GameBoard = ({ onScoreUpdate, onGameOver, gameMode = '2player', aiDifficul
               }
             }}
             style={{
-              padding: window.innerWidth < 768 ? '12px 25px' : '15px 40px',
-              fontSize: window.innerWidth < 768 ? '18px' : '24px',
+              padding: '12px 25px',
+              fontSize: '18px',
               fontWeight: 'bold',
               backgroundColor: GAME_CONFIG.COLORS.BALL,
               color: GAME_CONFIG.COLORS.TEXT,
@@ -786,24 +797,20 @@ const GameBoard = ({ onScoreUpdate, onGameOver, gameMode = '2player', aiDifficul
               touchAction: 'manipulation'
             }}
             onMouseEnter={(e) => {
-              if (window.innerWidth >= 768) {
-                e.target.style.transform = 'scale(1.1)';
-              }
+              e.target.style.transform = 'scale(1.05)';
             }}
             onMouseLeave={(e) => {
-              if (window.innerWidth >= 768) {
-                e.target.style.transform = 'scale(1)';
-              }
+              e.target.style.transform = 'scale(1)';
             }}
           >
             START GAME
           </button>
           <div style={{ 
-            marginTop: window.innerWidth < 768 ? '15px' : '20px', 
-            fontSize: window.innerWidth < 768 ? '12px' : '14px', 
+            marginTop: '15px', 
+            fontSize: '12px', 
             opacity: 0.7,
             textAlign: 'center',
-            padding: window.innerWidth < 768 ? '0 10px' : '0'
+            padding: '0 10px'
           }}>
             Press Space or Esc to pause during game
           </div>
@@ -825,14 +832,14 @@ const GameBoard = ({ onScoreUpdate, onGameOver, gameMode = '2player', aiDifficul
             alignItems: 'center',
             justifyContent: 'center',
             color: GAME_CONFIG.COLORS.TEXT,
-            fontSize: window.innerWidth < 768 ? '24px' : '32px',
+            fontSize: '24px',
             fontWeight: 'bold',
             zIndex: 1000,
             borderRadius: '10px',
-            padding: window.innerWidth < 768 ? '20px' : '0'
+            padding: '20px'
           }}
         >
-          <div style={{ marginBottom: window.innerWidth < 768 ? '15px' : '20px' }}>PAUSED</div>
+          <div style={{ marginBottom: '15px' }}>PAUSED</div>
           <button
             onClick={() => {
               if (gameEngineRef.current) {
@@ -840,8 +847,8 @@ const GameBoard = ({ onScoreUpdate, onGameOver, gameMode = '2player', aiDifficul
               }
             }}
             style={{
-              padding: window.innerWidth < 768 ? '10px 25px' : '10px 30px',
-              fontSize: window.innerWidth < 768 ? '16px' : '18px',
+              padding: '10px 25px',
+              fontSize: '16px',
               backgroundColor: GAME_CONFIG.COLORS.BALL,
               color: GAME_CONFIG.COLORS.TEXT,
               border: 'none',

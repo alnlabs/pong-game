@@ -1,8 +1,28 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { GAME_CONFIG } from '../config/gameConfig';
 
 const TouchControls = ({ onMovePlayer1, onMovePlayer2, playerNumber, gameMode }) => {
-  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      const isSmallScreen = window.innerWidth < 768;
+      setIsMobile(isMobileDevice || isSmallScreen);
+    };
+
+    // Check on mount
+    checkMobile();
+
+    // Listen for resize events
+    window.addEventListener('resize', checkMobile);
+    window.addEventListener('orientationchange', checkMobile);
+
+    return () => {
+      window.removeEventListener('resize', checkMobile);
+      window.removeEventListener('orientationchange', checkMobile);
+    };
+  }, []);
   
   if (!isMobile) {
     return null;
@@ -36,12 +56,13 @@ const TouchControls = ({ onMovePlayer1, onMovePlayer2, playerNumber, gameMode })
   
   return (
     <div
+      className="touch-controls-container"
       style={{
         position: 'fixed',
         bottom: 0,
         left: 0,
         right: 0,
-        display: 'flex',
+        display: isMobile ? 'flex' : 'none',
         justifyContent: 'space-around',
         padding: `${bottomPadding} ${bottomPadding} ${safeAreaBottom} ${bottomPadding}`,
         zIndex: 100,

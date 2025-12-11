@@ -2,7 +2,6 @@ import React from 'react';
 import { GAME_CONFIG } from '../config/gameConfig';
 
 const GameOver = ({ winner, onRestart, gameMode = '2player' }) => {
-  const isMobile = window.innerWidth < 768;
   
   const getWinnerMessage = () => {
     if (gameMode === 'ai') {
@@ -30,24 +29,25 @@ const GameOver = ({ winner, onRestart, gameMode = '2player' }) => {
         justifyContent: 'center',
         color: GAME_CONFIG.COLORS.TEXT,
         zIndex: 1000,
-        padding: isMobile ? '20px' : '40px'
+        padding: '20px'
       }}
     >
       <div
         style={{
           textAlign: 'center',
-          padding: isMobile ? '25px 20px' : '40px',
+          padding: '25px 20px',
           backgroundColor: GAME_CONFIG.COLORS.BACKGROUND,
           borderRadius: '20px',
           border: `3px solid ${GAME_CONFIG.COLORS.BALL}`,
           boxShadow: `0 0 30px ${GAME_CONFIG.COLORS.BALL}`,
-          width: isMobile ? '90%' : 'auto',
-          maxWidth: isMobile ? '400px' : 'none'
+          width: '90%',
+          maxWidth: '400px',
+          boxSizing: 'border-box'
         }}
       >
         <h1
           style={{
-            fontSize: isMobile ? '32px' : '48px',
+            fontSize: '32px',
             margin: '0 0 15px 0',
             color: GAME_CONFIG.COLORS.BALL
           }}
@@ -56,8 +56,8 @@ const GameOver = ({ winner, onRestart, gameMode = '2player' }) => {
         </h1>
         <p
           style={{
-            fontSize: isMobile ? '22px' : '32px',
-            margin: isMobile ? '15px 0' : '20px 0',
+            fontSize: '22px',
+            margin: '15px 0',
             color: GAME_CONFIG.COLORS.TEXT
           }}
         >
@@ -66,9 +66,9 @@ const GameOver = ({ winner, onRestart, gameMode = '2player' }) => {
         <button
           onClick={onRestart}
           style={{
-            marginTop: isMobile ? '20px' : '30px',
-            padding: isMobile ? '12px 30px' : '15px 40px',
-            fontSize: isMobile ? '16px' : '20px',
+            marginTop: '20px',
+            padding: '12px 30px',
+            fontSize: '16px',
             fontWeight: 'bold',
             backgroundColor: GAME_CONFIG.COLORS.BALL,
             color: GAME_CONFIG.COLORS.TEXT,
@@ -77,18 +77,14 @@ const GameOver = ({ winner, onRestart, gameMode = '2player' }) => {
             cursor: 'pointer',
             boxShadow: `0 0 20px ${GAME_CONFIG.COLORS.BALL}`,
             transition: 'transform 0.2s',
-            width: isMobile ? '100%' : 'auto',
+            width: '100%',
             touchAction: 'manipulation'
           }}
           onMouseEnter={(e) => {
-            if (!isMobile) {
-              e.target.style.transform = 'scale(1.1)';
-            }
+            e.target.style.transform = 'scale(1.05)';
           }}
           onMouseLeave={(e) => {
-            if (!isMobile) {
-              e.target.style.transform = 'scale(1)';
-            }
+            e.target.style.transform = 'scale(1)';
           }}
         >
           Play Again

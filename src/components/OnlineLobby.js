@@ -122,21 +122,22 @@ const OnlineLobby = ({ onGameStart, onCancel }) => {
       <div
         style={{
           backgroundColor: GAME_CONFIG.COLORS.BACKGROUND,
-          padding: window.innerWidth < 768 ? '25px 20px' : '40px',
+          padding: '25px 20px',
           borderRadius: '20px',
           border: `3px solid ${GAME_CONFIG.COLORS.BALL}`,
           boxShadow: `0 0 30px ${GAME_CONFIG.COLORS.BALL}`,
-          minWidth: window.innerWidth < 768 ? 'auto' : '400px',
-          maxWidth: window.innerWidth < 768 ? '90%' : '500px',
-          width: window.innerWidth < 768 ? '90%' : 'auto'
+          minWidth: 'auto',
+          maxWidth: '90%',
+          width: '90%',
+          boxSizing: 'border-box'
         }}
       >
         <h2
           style={{
             color: GAME_CONFIG.COLORS.TEXT,
-            marginBottom: window.innerWidth < 768 ? '20px' : '30px',
+            marginBottom: '20px',
             textAlign: 'center',
-            fontSize: window.innerWidth < 768 ? '22px' : '28px'
+            fontSize: '22px'
           }}
         >
           Online Multiplayer
