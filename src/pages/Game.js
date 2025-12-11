@@ -186,7 +186,14 @@ const Game = () => {
             )}
             
             {!showOnlineLobby && (
-              <>
+              <div style={{ 
+                width: '100%', 
+                display: 'flex', 
+                justifyContent: 'center',
+                flexShrink: 1,
+                minHeight: 0,
+                overflow: 'hidden'
+              }}>
                 <GameBoard
                   key={gameKey}
                   gameMode={gameMode}
@@ -196,7 +203,7 @@ const Game = () => {
                   onGameOver={handleGameOver}
                 />
                 {gameOver && <GameOver winner={winner} onRestart={handleRestart} gameMode={gameMode} />}
-              </>
+              </div>
             )}
           </>
         )}

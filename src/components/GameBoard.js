@@ -66,17 +66,17 @@ const GameBoard = ({ onScoreUpdate, onGameOver, gameMode = '2player', aiDifficul
       // - App padding bottom: 8px + safe area
       // - Home button header: ~28px (button + margin)
       // - ScoreBoard: ~48px (compact with padding)
-      // - Margin between elements: ~6px
-      // - Buffer for rounding errors: ~10px
+      // - Margin between elements: ~12px (6px between header and score, 6px between score and canvas)
+      // - Buffer for rounding errors and borders: ~15px
       const appPaddingTop = 8 + safeAreaTop;
       const appPaddingBottom = 8 + safeAreaBottom;
       const headerHeight = 28;
       const scoreBoardHeight = 48;
-      const margins = 6;
-      const buffer = 10;
+      const margins = 12;
+      const buffer = 15; // Increased buffer for borders and rounding
       
       const totalUIHeight = appPaddingTop + appPaddingBottom + headerHeight + scoreBoardHeight + margins + buffer;
-      const availableHeight = viewportHeight - totalUIHeight;
+      const availableHeight = Math.max(200, viewportHeight - totalUIHeight); // Ensure minimum height
       
       // Account for horizontal padding
       const appPaddingLeft = 8;
@@ -99,9 +99,17 @@ const GameBoard = ({ onScoreUpdate, onGameOver, gameMode = '2player', aiDifficul
       const finalHeight = Math.min(height, availableHeight);
       const finalWidth = finalHeight / aspectRatio;
       
+      // Final size - ensure it fits both width and height constraints
+      const constrainedWidth = Math.min(finalWidth, availableWidth);
+      const constrainedHeight = constrainedWidth * aspectRatio;
+      
+      // Make sure final height also fits
+      const finalCanvasHeight = Math.min(constrainedHeight, availableHeight);
+      const finalCanvasWidth = finalCanvasHeight / aspectRatio;
+      
       setCanvasSize({ 
-        width: Math.max(minWidth, Math.min(finalWidth, availableWidth)), 
-        height: finalHeight 
+        width: Math.max(minWidth, Math.min(finalCanvasWidth, availableWidth)), 
+        height: Math.min(finalCanvasHeight, availableHeight)
       });
     };
 
@@ -777,15 +785,12 @@ const GameBoard = ({ onScoreUpdate, onGameOver, gameMode = '2player', aiDifficul
     <>
       <div style={{ 
         position: 'relative', 
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        width: '100%',
+        display: 'inline-block',
+        width: `${canvasSize.width}px`,
         maxWidth: '100%',
         boxSizing: 'border-box',
         flexShrink: 1,
-        minHeight: 0,
-        overflow: 'hidden'
+        minHeight: 0
       }}>
         <canvas
           ref={canvasRef}
@@ -810,8 +815,8 @@ const GameBoard = ({ onScoreUpdate, onGameOver, gameMode = '2player', aiDifficul
             position: 'absolute',
             top: 0,
             left: 0,
-            width: canvasSize.width,
-            height: canvasSize.height,
+            width: `${canvasSize.width}px`,
+            height: `${canvasSize.height}px`,
             backgroundColor: 'rgba(0, 0, 0, 0.8)',
             display: 'flex',
             flexDirection: 'column',
@@ -881,8 +886,8 @@ const GameBoard = ({ onScoreUpdate, onGameOver, gameMode = '2player', aiDifficul
             position: 'absolute',
             top: 0,
             left: 0,
-            width: canvasSize.width,
-            height: canvasSize.height,
+            width: `${canvasSize.width}px`,
+            height: `${canvasSize.height}px`,
             backgroundColor: 'rgba(0, 0, 0, 0.7)',
             display: 'flex',
             flexDirection: 'column',
