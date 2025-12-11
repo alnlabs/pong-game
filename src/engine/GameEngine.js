@@ -9,15 +9,25 @@ export class GameEngine {
   }
 
   reset() {
-    // Ball state
+    // Ball state - ensure ball always has velocity
+    const randomVx = Math.random() > 0.5 ? 1 : -1;
+    const randomVy = Math.random() > 0.5 ? 1 : -1;
     this.ball = {
       x: this.canvasWidth / 2,
       y: this.canvasHeight / 2,
-      vx: GAME_CONFIG.BALL_INITIAL_SPEED * (Math.random() > 0.5 ? 1 : -1),
-      vy: GAME_CONFIG.BALL_INITIAL_SPEED * (Math.random() > 0.5 ? 1 : -1),
+      vx: GAME_CONFIG.BALL_INITIAL_SPEED * randomVx,
+      vy: GAME_CONFIG.BALL_INITIAL_SPEED * randomVy,
       speed: GAME_CONFIG.BALL_INITIAL_SPEED,
       size: GAME_CONFIG.BALL_SIZE
     };
+    
+    // Ensure ball has non-zero velocity
+    if (this.ball.vx === 0) {
+      this.ball.vx = GAME_CONFIG.BALL_INITIAL_SPEED;
+    }
+    if (this.ball.vy === 0) {
+      this.ball.vy = GAME_CONFIG.BALL_INITIAL_SPEED;
+    }
 
     // Paddle states
     this.paddle1 = {
@@ -38,8 +48,14 @@ export class GameEngine {
     this.score1 = 0;
     this.score2 = 0;
     this.hitCount = 0;
-    this.gameState = 'playing'; // 'playing', 'paused', 'gameOver'
+    this.gameState = 'ready'; // 'ready', 'playing', 'paused', 'gameOver'
     this.winner = null;
+  }
+  
+  start() {
+    if (this.gameState === 'ready') {
+      this.gameState = 'playing';
+    }
   }
 
   updatePaddle(paddleNum, direction) {
@@ -55,6 +71,11 @@ export class GameEngine {
 
   updateBall(obstacles = []) {
     if (this.gameState !== 'playing') return;
+
+    // Ensure ball has valid velocity (check for NaN or 0)
+    if (isNaN(this.ball.vx) || isNaN(this.ball.vy) || (this.ball.vx === 0 && this.ball.vy === 0)) {
+      this.resetBall();
+    }
 
     // Update ball position
     this.ball.x += this.ball.vx;
@@ -85,10 +106,18 @@ export class GameEngine {
       this.score2++;
       this.resetBall();
       this.checkGameOver();
+      // Return to ready state after goal (player must start again)
+      if (this.gameState !== 'gameOver') {
+        this.gameState = 'ready';
+      }
     } else if (this.ball.y > this.canvasHeight) {
       this.score1++;
       this.resetBall();
       this.checkGameOver();
+      // Return to ready state after goal (player must start again)
+      if (this.gameState !== 'gameOver') {
+        this.gameState = 'ready';
+      }
     }
   }
 
@@ -134,8 +163,9 @@ export class GameEngine {
     
     // Update velocity with new angle
     const speed = Math.sqrt(this.ball.vx ** 2 + this.ball.vy ** 2);
+    const direction = this.ball.vy > 0 ? -1 : 1; // Determine direction (up or down)
     this.ball.vx = Math.sin(angle) * speed;
-    this.ball.vy = -Math.abs(this.ball.vy) / this.ball.vy * Math.cos(angle) * speed;
+    this.ball.vy = direction * Math.cos(angle) * speed;
     
     // Increase speed gradually
     this.hitCount++;
@@ -178,6 +208,10 @@ export class GameEngine {
     // If ball falls into hole, reset ball
     if (distance < radius - this.ball.size / 2) {
       this.resetBall();
+      // Return to ready state after hole (player must start again)
+      if (this.gameState !== 'gameOver') {
+        this.gameState = 'ready';
+      }
     }
   }
 
@@ -229,9 +263,19 @@ export class GameEngine {
   resetBall() {
     this.ball.x = this.canvasWidth / 2;
     this.ball.y = this.canvasHeight / 2;
-    this.ball.vx = GAME_CONFIG.BALL_INITIAL_SPEED * (Math.random() > 0.5 ? 1 : -1);
-    this.ball.vy = GAME_CONFIG.BALL_INITIAL_SPEED * (Math.random() > 0.5 ? 1 : -1);
+    const randomVx = Math.random() > 0.5 ? 1 : -1;
+    const randomVy = Math.random() > 0.5 ? 1 : -1;
+    this.ball.vx = GAME_CONFIG.BALL_INITIAL_SPEED * randomVx;
+    this.ball.vy = GAME_CONFIG.BALL_INITIAL_SPEED * randomVy;
     this.ball.speed = GAME_CONFIG.BALL_INITIAL_SPEED;
+    
+    // Ensure ball has non-zero velocity
+    if (this.ball.vx === 0) {
+      this.ball.vx = GAME_CONFIG.BALL_INITIAL_SPEED;
+    }
+    if (this.ball.vy === 0) {
+      this.ball.vy = GAME_CONFIG.BALL_INITIAL_SPEED;
+    }
   }
 
   checkGameOver() {
@@ -248,6 +292,13 @@ export class GameEngine {
     if (this.gameState === 'playing') {
       this.gameState = 'paused';
     } else if (this.gameState === 'paused') {
+      this.gameState = 'playing';
+    }
+    // Don't allow pausing when in 'ready' state
+  }
+  
+  start() {
+    if (this.gameState === 'ready') {
       this.gameState = 'playing';
     }
   }

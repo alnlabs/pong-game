@@ -300,19 +300,26 @@ const GameBoard = ({ onScoreUpdate, onGameOver, gameMode = '2player', aiDifficul
     };
   }, [gameLoop]);
 
-  // Handle pause
+  // Handle pause and start
   useEffect(() => {
-    const handlePause = (e) => {
+    const handleKeyPress = (e) => {
       if (e.key === ' ' || e.key === 'Escape') {
         e.preventDefault();
         if (gameEngineRef.current) {
-          gameEngineRef.current.pause();
+          const state = gameEngineRef.current.getState();
+          // If ready, start the game
+          if (state.gameState === 'ready') {
+            gameEngineRef.current.start();
+          } else {
+            // Otherwise, toggle pause
+            gameEngineRef.current.pause();
+          }
         }
       }
     };
 
-    window.addEventListener('keydown', handlePause);
-    return () => window.removeEventListener('keydown', handlePause);
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
   }, []);
 
   const handleTouchMove = useCallback((direction, playerNumber) => {
@@ -411,6 +418,60 @@ const GameBoard = ({ onScoreUpdate, onGameOver, gameMode = '2player', aiDifficul
         size={state.ball.size}
       />
 
+      {/* Start screen overlay */}
+      {state.gameState === 'ready' && (
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: GAME_CONFIG.COLORS.TEXT,
+            zIndex: 1000
+          }}
+        >
+          <div style={{ fontSize: '36px', fontWeight: 'bold', marginBottom: '20px' }}>
+            Ready to Play?
+          </div>
+          <button
+            onClick={() => {
+              if (gameEngineRef.current) {
+                gameEngineRef.current.start();
+              }
+            }}
+            style={{
+              padding: '15px 40px',
+              fontSize: '24px',
+              fontWeight: 'bold',
+              backgroundColor: GAME_CONFIG.COLORS.BALL,
+              color: GAME_CONFIG.COLORS.TEXT,
+              border: 'none',
+              borderRadius: '10px',
+              cursor: 'pointer',
+              boxShadow: `0 0 20px ${GAME_CONFIG.COLORS.BALL}`,
+              transition: 'transform 0.2s',
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.transform = 'scale(1.1)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.transform = 'scale(1)';
+            }}
+          >
+            START GAME
+          </button>
+          <div style={{ marginTop: '20px', fontSize: '14px', opacity: 0.7 }}>
+            Press Space or Esc to pause during game
+          </div>
+        </div>
+      )}
+      
       {/* Pause overlay */}
       {state.gameState === 'paused' && (
         <div
@@ -422,14 +483,34 @@ const GameBoard = ({ onScoreUpdate, onGameOver, gameMode = '2player', aiDifficul
             bottom: 0,
             backgroundColor: 'rgba(0, 0, 0, 0.7)',
             display: 'flex',
+            flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
             color: GAME_CONFIG.COLORS.TEXT,
             fontSize: '32px',
-            fontWeight: 'bold'
+            fontWeight: 'bold',
+            zIndex: 1000
           }}
         >
-          PAUSED
+          <div style={{ marginBottom: '20px' }}>PAUSED</div>
+          <button
+            onClick={() => {
+              if (gameEngineRef.current) {
+                gameEngineRef.current.pause(); // Toggle pause
+              }
+            }}
+            style={{
+              padding: '10px 30px',
+              fontSize: '18px',
+              backgroundColor: GAME_CONFIG.COLORS.BALL,
+              color: GAME_CONFIG.COLORS.TEXT,
+              border: 'none',
+              borderRadius: '8px',
+              cursor: 'pointer'
+            }}
+          >
+            RESUME
+          </button>
         </div>
       )}
     </div>
