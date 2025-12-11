@@ -27,6 +27,7 @@ const Game = () => {
   const [onlineConfig, setOnlineConfig] = useState(null);
   const [user, setUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [showModeSelector, setShowModeSelector] = useState(true);
 
   const handleScoreUpdate = (newScore1, newScore2) => {
     setScore1(newScore1);
@@ -142,28 +143,26 @@ const Game = () => {
   return (
     <div className="App">
       <div className="game-container">
+        {/* Minimal header - only show Home button */}
         <div style={{ 
           width: '100%', 
           display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center',
-          marginBottom: '10px',
+          justifyContent: 'flex-end',
+          marginBottom: '8px',
           padding: '0 10px',
           boxSizing: 'border-box'
         }}>
-          <h1 className="game-title" style={{ marginBottom: 0, flex: 1 }}>PONG GAME</h1>
           <button
             onClick={() => navigate('/')}
             style={{
-              padding: '8px 16px',
-              fontSize: '14px',
+              padding: '6px 12px',
+              fontSize: '12px',
               backgroundColor: 'rgba(22, 33, 62, 0.8)',
               color: GAME_CONFIG.COLORS.TEXT,
               border: `2px solid ${GAME_CONFIG.COLORS.BALL}`,
-              borderRadius: '8px',
+              borderRadius: '6px',
               cursor: 'pointer',
-              touchAction: 'manipulation',
-              whiteSpace: 'nowrap'
+              touchAction: 'manipulation'
             }}
           >
             Home
@@ -171,67 +170,80 @@ const Game = () => {
         </div>
         
         {showAuth && <Auth onAuthSuccess={handleAuthSuccess} onCancel={handleAuthCancel} />}
-        {user && gameMode === 'online' && (
-          <div
-            style={{
-              width: '100%',
-              maxWidth: '100%',
-              padding: '8px',
-              marginBottom: '8px',
-              backgroundColor: GAME_CONFIG.COLORS.OBSTACLE,
-              borderRadius: '8px',
-              color: GAME_CONFIG.COLORS.TEXT,
-              fontSize: '11px',
-              textAlign: 'center',
-              boxSizing: 'border-box'
-            }}
-          >
-            Signed in as: {user.displayName || user.email || 'Guest'} 
-            <button
-              onClick={async () => {
-                await firebaseAuth.signOut();
-                if (gameMode === 'online') {
-                  setGameMode('2player');
-                  setShowOnlineLobby(false);
-                  setOnlineConfig(null);
-                }
-              }}
-              style={{
-                marginLeft: '8px',
-                padding: '4px 8px',
-                fontSize: '11px',
-                backgroundColor: 'transparent',
-                color: GAME_CONFIG.COLORS.BALL,
-                border: `1px solid ${GAME_CONFIG.COLORS.BALL}`,
-                borderRadius: '5px',
-                cursor: 'pointer',
-                touchAction: 'manipulation'
-              }}
-            >
-              Sign Out
-            </button>
-          </div>
-        )}
+        
         {!showAuth && (
           <>
-            <ModeSelector
-              gameMode={gameMode}
-              onModeChange={handleModeChange}
-              aiDifficulty={aiDifficulty}
-              onDifficultyChange={handleDifficultyChange}
-            />
+            {/* Mode selector - only show when toggled or before game starts */}
+            {showModeSelector && (
+              <div style={{ marginBottom: '8px' }}>
+                <div style={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  alignItems: 'center',
+                  marginBottom: '5px',
+                  padding: '0 5px'
+                }}>
+                  <span style={{ fontSize: '12px', color: GAME_CONFIG.COLORS.TEXT, opacity: 0.8 }}>
+                    Game Mode
+                  </span>
+                  <button
+                    onClick={() => setShowModeSelector(false)}
+                    style={{
+                      padding: '2px 8px',
+                      fontSize: '10px',
+                      backgroundColor: 'transparent',
+                      color: GAME_CONFIG.COLORS.TEXT,
+                      border: `1px solid ${GAME_CONFIG.COLORS.TEXT}`,
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      opacity: 0.6
+                    }}
+                  >
+                    Hide
+                  </button>
+                </div>
+                <ModeSelector
+                  gameMode={gameMode}
+                  onModeChange={handleModeChange}
+                  aiDifficulty={aiDifficulty}
+                  onDifficultyChange={handleDifficultyChange}
+                />
+              </div>
+            )}
+            {!showModeSelector && (
+              <button
+                onClick={() => setShowModeSelector(true)}
+                style={{
+                  width: '100%',
+                  padding: '6px',
+                  marginBottom: '8px',
+                  fontSize: '11px',
+                  backgroundColor: 'rgba(22, 33, 62, 0.6)',
+                  color: GAME_CONFIG.COLORS.TEXT,
+                  border: `1px solid ${GAME_CONFIG.COLORS.OBSTACLE}`,
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  opacity: 0.7
+                }}
+              >
+                Show Game Mode
+              </button>
+            )}
+            
             <ScoreBoard 
               score1={score1} 
               score2={score2}
               player1Name={playerNames.player1}
               player2Name={playerNames.player2}
             />
+            
             {showOnlineLobby && user && (
               <OnlineLobby
                 onGameStart={handleOnlineGameStart}
                 onCancel={handleOnlineCancel}
               />
             )}
+            
             {!showOnlineLobby && (
               <>
                 <GameBoard
@@ -242,7 +254,6 @@ const Game = () => {
                   onScoreUpdate={handleScoreUpdate}
                   onGameOver={handleGameOver}
                 />
-                <Instructions gameMode={gameMode} />
                 {gameOver && <GameOver winner={winner} onRestart={handleRestart} gameMode={gameMode} />}
               </>
             )}

@@ -19,23 +19,26 @@ const Home = () => {
           >
             Play Now
           </button>
+        </div>
+
+        <div className="home-menu">
           <button 
-            className="home-button secondary"
-            onClick={() => navigate('/game?mode=2player')}
+            className="home-menu-button"
+            onClick={() => navigate('/help')}
           >
-            2 Players
+            📖 How to Play
           </button>
           <button 
-            className="home-button secondary"
-            onClick={() => navigate('/game?mode=ai')}
+            className="home-menu-button"
+            onClick={() => navigate('/settings')}
           >
-            vs AI
+            ⚙️ Settings
           </button>
           <button 
-            className="home-button secondary"
-            onClick={() => navigate('/game?mode=online')}
+            className="home-menu-button"
+            onClick={() => navigate('/about')}
           >
-            Online
+            ℹ️ About
           </button>
         </div>
 
