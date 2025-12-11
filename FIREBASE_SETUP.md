@@ -16,7 +16,7 @@ This project uses Firebase Authentication and Realtime Database (not Hosting).
 3. Navigate to **Authentication** > **Sign-in method**
 4. Enable the following sign-in methods:
    - **Anonymous** (for guest users)
-   - **Email/Password** (for registered users)
+   - **Google** (for Google OAuth sign-in)
 
 ### 2. Enable Realtime Database
 
@@ -58,8 +58,8 @@ cp .env.example .env
 ## Authentication Flow
 
 - **Guest Mode**: Users can sign in anonymously to play immediately
-- **Email/Password**: Users can create accounts or sign in with email
-- **Online Multiplayer**: Requires authentication (guest or registered)
+- **Google Sign-In**: Users can sign in with their Google account
+- **Online Multiplayer**: Requires authentication (guest or Google account)
 
 ## Database Structure
 

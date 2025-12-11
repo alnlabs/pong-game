@@ -2,11 +2,10 @@
 import { auth } from '../config/firebaseConfig';
 import {
   signInAnonymously,
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
+  signInWithPopup,
+  GoogleAuthProvider,
   signOut,
-  onAuthStateChanged,
-  updateProfile
+  onAuthStateChanged
 } from 'firebase/auth';
 
 class FirebaseAuthService {
@@ -39,32 +38,11 @@ class FirebaseAuthService {
     }
   }
 
-  // Sign in with email and password
-  async signInWithEmail(email, password) {
+  // Sign in with Google
+  async signInWithGoogle() {
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      return {
-        success: true,
-        user: userCredential.user
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: error.message
-      };
-    }
-  }
-
-  // Create account with email and password
-  async createAccount(email, password, displayName = null) {
-    try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      
-      // Update display name if provided
-      if (displayName && userCredential.user) {
-        await updateProfile(userCredential.user, { displayName });
-      }
-
+      const provider = new GoogleAuthProvider();
+      const userCredential = await signInWithPopup(auth, provider);
       return {
         success: true,
         user: userCredential.user
