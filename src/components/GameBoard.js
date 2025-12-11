@@ -295,13 +295,13 @@ const GameBoard = ({ onScoreUpdate, onGameOver, gameMode = '2player', aiDifficul
     return () => window.removeEventListener('keydown', handlePause);
   }, []);
 
-  if (!gameEngineRef.current) {
-    return <div>Loading...</div>;
-  }
-
   const handleTouchMove = useCallback((direction, playerNumber) => {
     touchDirectionRef.current[`player${playerNumber}`] = direction;
   }, []);
+
+  if (!gameEngineRef.current) {
+    return <div>Loading...</div>;
+  }
 
   const state = gameEngineRef.current.getState();
 
