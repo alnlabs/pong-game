@@ -284,16 +284,25 @@ const GameBoard = ({ onScoreUpdate, onGameOver, gameMode = '2player', aiDifficul
       }
       onGameOver(updatedState.winner);
     }
-
-    // Continue game loop
-    animationFrameRef.current = requestAnimationFrame(gameLoop);
-  }, [onScoreUpdate, onGameOver, gameMode]);
+    // Game loop continuation is handled by useEffect
+  }, [onScoreUpdate, onGameOver, gameMode, aiDifficulty, onlineConfig]);
 
   // Start game loop
   useEffect(() => {
-    animationFrameRef.current = requestAnimationFrame(gameLoop);
+    let running = true;
+    
+    const loop = () => {
+      if (!running) return;
+      gameLoop();
+      if (running) {
+        animationFrameRef.current = requestAnimationFrame(loop);
+      }
+    };
+    
+    animationFrameRef.current = requestAnimationFrame(loop);
 
     return () => {
+      running = false;
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
